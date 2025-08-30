@@ -15,7 +15,7 @@ inline std::shared_ptr<spdlog::logger> get_vinkan_logger() {
   return logger;
 }
 
-static auto logger = get_vinkan_logger();
+static auto vinkan_logger = get_vinkan_logger();
 
 #endif
 
