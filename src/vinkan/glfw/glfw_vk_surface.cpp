@@ -3,6 +3,8 @@
 #include <cassert>
 #include <stdexcept>
 
+namespace vinkan {
+
 GlfwVkSurface::GlfwVkSurface(GLFWwindow *window, VkInstance instance) {
   if (glfwCreateWindowSurface(instance, window, nullptr, &handle_) !=
       VK_SUCCESS) {
@@ -20,3 +22,4 @@ GlfwVkSurface::~GlfwVkSurface() {
 
 }  // namespace vvw_vk
 
+}  // namespace vinkan

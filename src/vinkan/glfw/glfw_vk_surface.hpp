@@ -1,5 +1,5 @@
-#ifndef GLFW_VK_SURFACE_HPP
-#define GLFW_VK_SURFACE_HPP
+#ifndef VINKAN_GLFW_VK_SURFACE_HPP
+#define VINKAN_GLFW_VK_SURFACE_HPP
 
 #include <vulkan/vulkan_core.h>
 
@@ -9,6 +9,8 @@
 #define GLFW_INCLUDE_VULKAN
 #include <GLFW/glfw3.h>
 
+namespace vinkan {
+
 class GlfwVkSurface : public PtrHandleWrapper<VkSurfaceKHR> {
  public:
   GlfwVkSurface(GLFWwindow *window, VkInstance instance);
@@ -17,6 +19,8 @@ class GlfwVkSurface : public PtrHandleWrapper<VkSurfaceKHR> {
  private:
   VkInstance surfaceInstance_;
 };
+
+}  // namespace vinkan
 
 #endif /* GLFW_SURFACE_H */
 
