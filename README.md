@@ -5,6 +5,7 @@ Vinkan is a personal Vulkan wrapper that cuts through repetitive setup code for 
 - Skip the ceremony: Turn ~1000 lines of setup into ~100 lines of actual work
 - Eliminate boilerplate: No more rewriting queue family queries, basic framebuffer setup, and memory allocation patterns for every project
 - Keep the important stuff: Full access to Vulkan objects when you need them
+- Need a new pipeline and render target for XYZ ? No more hour-long fights with the API before seeing something
 - Faster prototyping: Less time on setup, more time building
 
 ## What It Actually Does
