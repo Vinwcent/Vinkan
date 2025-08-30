@@ -6,7 +6,8 @@
 
 #include "vinkan/logging/logger.hpp"
 
-void logQueues(std::vector<QueueFamilyInfo> queuesInfo, VkSurfaceKHR surface) {
+void logQueues(std::vector<vinkan::QueueFamilyInfo> queuesInfo,
+               VkSurfaceKHR surface) {
   std::ostringstream log;
   log << std::to_string(queuesInfo.size()) + " queue families found";
   for (auto queueInfo : queuesInfo) {
