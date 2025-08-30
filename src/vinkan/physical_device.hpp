@@ -11,7 +11,7 @@
 #include "vinkan/generics/ptr_handle_wrapper.hpp"
 #include "vinkan/structs/queue_family_info.hpp"
 
-namespace vvw_vk {
+namespace vinkan {
 
 struct PhysicalDeviceInfo {
   std::vector<VkQueueFlagBits> requestedQueueFlags;
@@ -49,7 +49,7 @@ class PhysicalDevice : public PtrHandleWrapper<VkPhysicalDevice> {
   std::vector<QueueFamilyInfo> getQueuesInfo_(
       VkPhysicalDevice physicalDevice) const;
 };
-}  // namespace vvw_vk
+}  // namespace vinkan
 
 #endif /* PHYSICAL_DEVICE_H */
 

@@ -8,7 +8,7 @@
 #include "vinkan/generics/concepts.hpp"
 #include "vinkan/generics/ptr_handle_wrapper.hpp"
 
-namespace vvw_vk {
+namespace vinkan {
 
 template <EnumType T>
 class DeviceBuilder;
@@ -67,7 +67,7 @@ class Device : PtrHandleWrapper<VkDevice> {
   friend class DeviceBuilder<T>;
 };
 
-}  // namespace vvw_vk
+}  // namespace vinkan
 
 #endif
 

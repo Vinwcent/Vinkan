@@ -32,7 +32,7 @@ void logQueues(std::vector<QueueFamilyInfo> queuesInfo, VkSurfaceKHR surface) {
   SPDLOG_LOGGER_INFO(get_vinkan_logger(), log.str());
 }
 
-namespace vvw_vk {
+namespace vinkan {
 
 PhysicalDevice::PhysicalDevice(PhysicalDeviceInfo physicalDeviceInfo,
                                VkInstance instance) {
@@ -200,5 +200,5 @@ bool PhysicalDevice::supportExtensions_(
   return requiredExtensions.empty();
 }
 
-}  // namespace vvw_vk
+}  // namespace vinkan
 

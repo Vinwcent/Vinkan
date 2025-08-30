@@ -5,6 +5,8 @@
 
 #include <cassert>
 
+namespace vinkan {
+
 struct QueueFamilyInfo {
  public:
   uint32_t queueIndex;
@@ -33,6 +35,8 @@ struct QueueFamilyInfo {
  private:
   VkPhysicalDevice physicalDevice_;
 };
+
+}  // namespace vinkan
 
 #endif /* QUEUE_FAMILY_INDICES_H */
 

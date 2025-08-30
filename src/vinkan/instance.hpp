@@ -8,6 +8,8 @@
 
 #include "vinkan/generics/ptr_handle_wrapper.hpp"
 
+namespace vinkan {
+
 struct SemanticVersion {
   uint32_t major;
   uint32_t minor;
@@ -26,7 +28,6 @@ struct InstanceInfo {
   std::vector<const char *> &extraVkExtensions;
 };
 
-namespace vvw_vk {
 class Instance : public PtrHandleWrapper<VkInstance> {
  public:
   Instance(InstanceInfo &instanceInfo);
@@ -58,7 +59,7 @@ class Instance : public PtrHandleWrapper<VkInstance> {
   void setupDebugMessenger_();
 };
 
-}  // namespace vvw_vk
+}  // namespace vinkan
 
 #endif /* ifndef VVW_INSTANCE_HPP */
 

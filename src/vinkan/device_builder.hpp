@@ -13,7 +13,7 @@
 #include "vinkan/logging/logger.hpp"
 #include "vinkan/structs/queue_family_info.hpp"
 
-namespace vvw_vk {
+namespace vinkan {
 
 template <EnumType T>
 struct QueueFamilyRequest {
@@ -143,7 +143,7 @@ class DeviceBuilder {
   }
 };
 
-}  // namespace vvw_vk
+}  // namespace vinkan
 
 #endif
 

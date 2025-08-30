@@ -49,7 +49,7 @@ void destroyDebugUtilsMessengerEXT(VkInstance instance,
  *  INSTANCE  *
  **************/
 
-namespace vvw_vk {
+namespace vinkan {
 Instance::Instance(InstanceInfo &instanceInfo) {
   // Create app info
   VkApplicationInfo appInfo{};
@@ -226,5 +226,5 @@ void Instance::setupDebugMessenger_() {
   }
 }
 
-}  // namespace vvw_vk
+}  // namespace vinkan
 
