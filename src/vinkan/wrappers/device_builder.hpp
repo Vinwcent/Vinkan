@@ -9,9 +9,9 @@
 #include <stdexcept>
 #include <vector>
 
-#include "vinkan/device.hpp"
 #include "vinkan/logging/logger.hpp"
 #include "vinkan/structs/queue_family_info.hpp"
+#include "vinkan/wrappers/device.hpp"
 
 namespace vinkan {
 

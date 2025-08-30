@@ -2,13 +2,13 @@ set(VINKAN_SOURCES)
 set(VINKAN_HEADERS)
 
 list(APPEND VINKAN_SOURCES
-    src/vinkan/instance.cpp
-    src/vinkan/physical_device.cpp
+    src/vinkan/wrappers/instance.cpp
+    src/vinkan/wrappers/physical_device.cpp
 )
 list(APPEND VINKAN_HEADERS
-    src/vinkan/instance.hpp
-    src/vinkan/device_builder.hpp
-    src/vinkan/device.hpp
+    src/vinkan/wrappers/instance.hpp
+    src/vinkan/wrappers/device_builder.hpp
+    src/vinkan/wrappers/device.hpp
 )
 
 if(VINKAN_WITH_GLFW)
