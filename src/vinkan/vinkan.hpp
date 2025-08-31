@@ -7,5 +7,6 @@
 #include "wrappers/device_builder.hpp"
 #include "wrappers/instance.hpp"
 #include "wrappers/physical_device.hpp"
+#include "wrappers/swapchain.hpp"
 
 #endif
