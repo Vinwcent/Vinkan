@@ -19,7 +19,7 @@ struct AllocatedQueueFamilyInfo {
 };
 
 template <typename T>
-class Device : PtrHandleWrapper<VkDevice> {
+class Device : public PtrHandleWrapper<VkDevice> {
  public:
   VkQueue getQueue(T queueIdentifier, uint32_t queueNumber) {
     auto& allocInfo = familyIdentifierToAllocInfo_[queueIdentifier];
@@ -28,6 +28,12 @@ class Device : PtrHandleWrapper<VkDevice> {
     vkGetDeviceQueue(handle_, allocInfo.queueFamilyIndex, queueNumber, &queue);
     return queue;
   }
+
+  uint32_t getQueueFamilyIndex(T queueIdentifier) {
+    auto& allocInfo = familyIdentifierToAllocInfo_[queueIdentifier];
+    return allocInfo.queueFamilyIndex;
+  }
+
   ~Device() {
     if (isHandleValid()) {
       vkDestroyDevice(handle_, nullptr);

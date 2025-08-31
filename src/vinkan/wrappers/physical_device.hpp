@@ -10,6 +10,7 @@
 
 #include "vinkan/generics/ptr_handle_wrapper.hpp"
 #include "vinkan/structs/queue_family_info.hpp"
+#include "vinkan/structs/surface_support_details.hpp"
 
 namespace vinkan {
 
@@ -17,12 +18,6 @@ struct PhysicalDeviceInfo {
   std::vector<VkQueueFlagBits> requestedQueueFlags;
   std::optional<VkSurfaceKHR> surfaceSupportRequested;
   std::set<const char *> extensions;
-};
-
-struct SurfaceSupportDetails {
-  VkSurfaceCapabilitiesKHR capabilities;
-  std::vector<VkSurfaceFormatKHR> formats;
-  std::vector<VkPresentModeKHR> presentModes;
 };
 
 class PhysicalDevice : public PtrHandleWrapper<VkPhysicalDevice> {
@@ -33,6 +28,7 @@ class PhysicalDevice : public PtrHandleWrapper<VkPhysicalDevice> {
   // to select this physical device.
   SurfaceSupportDetails getSurfaceSupportDetails();
   std::vector<QueueFamilyInfo> getQueues();
+  VkPhysicalDeviceMemoryProperties getMemoryProperties();
 
  private:
   bool withSurfaceSupport = false;
