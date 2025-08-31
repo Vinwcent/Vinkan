@@ -30,6 +30,7 @@ namespace vinkan {
 class Swapchain : public PtrHandleWrapper<VkSwapchainKHR> {
  public:
   Swapchain(SwapchainInfo swapchainInfo);
+  ~Swapchain();
 
   std::optional<uint32_t> acquireNextImageIndex(
       VkSemaphore semaphoreToSignal, VkFence fenceToSignal = VK_NULL_HANDLE);

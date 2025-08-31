@@ -57,6 +57,12 @@ Swapchain::Swapchain(SwapchainInfo swapchainInfo) {
   SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Swapchain created");
 }
 
+Swapchain::~Swapchain() {
+  if (isHandleValid()) {
+    vkDestroySwapchainKHR(device_, handle_, nullptr);
+  }
+}
+
 std::optional<uint32_t> Swapchain::acquireNextImageIndex(
     VkSemaphore semaphoreToSignal, VkFence fenceToSignal) {
   uint32_t imageIndex;
