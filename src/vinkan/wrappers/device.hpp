@@ -28,6 +28,12 @@ class Device : PtrHandleWrapper<VkDevice> {
     vkGetDeviceQueue(handle_, allocInfo.queueFamilyIndex, queueNumber, &queue);
     return queue;
   }
+
+  uint32_t getQueueFamilyIndex(T queueIdentifier) {
+    auto& allocInfo = familyIdentifierToAllocInfo_[queueIdentifier];
+    return allocInfo.queueFamilyIndex;
+  }
+
   ~Device() {
     if (isHandleValid()) {
       vkDestroyDevice(handle_, nullptr);
