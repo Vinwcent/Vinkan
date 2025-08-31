@@ -15,6 +15,7 @@ list(APPEND VINKAN_HEADERS
     src/vinkan/wrappers/render_pass_builder.hpp
     src/vinkan/wrappers/render_pass.hpp
 		src/vinkan/wrappers/buffer.hpp
+		src/vinkan/vinkan_resources.hpp
 )
 
 if(VINKAN_WITH_GLFW)
