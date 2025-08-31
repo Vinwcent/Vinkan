@@ -9,10 +9,8 @@ list(APPEND VINKAN_SOURCES
 )
 list(APPEND VINKAN_HEADERS
     src/vinkan/wrappers/instance.hpp
-    src/vinkan/wrappers/device_builder.hpp
     src/vinkan/wrappers/device.hpp
     src/vinkan/wrappers/swapchain.hpp
-    src/vinkan/wrappers/render_pass_builder.hpp
     src/vinkan/wrappers/render_pass.hpp
 		src/vinkan/wrappers/buffer.hpp
 		src/vinkan/vinkan_resources.hpp
