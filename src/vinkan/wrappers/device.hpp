@@ -19,7 +19,7 @@ struct AllocatedQueueFamilyInfo {
 };
 
 template <typename T>
-class Device : PtrHandleWrapper<VkDevice> {
+class Device : public PtrHandleWrapper<VkDevice> {
  public:
   VkQueue getQueue(T queueIdentifier, uint32_t queueNumber) {
     auto& allocInfo = familyIdentifierToAllocInfo_[queueIdentifier];
