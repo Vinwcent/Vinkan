@@ -1,5 +1,7 @@
 #include "buffer.hpp"
 
+#include "vinkan/logging/logger.hpp"
+
 // std
 #include <cassert>
 #include <cstring>
@@ -74,6 +76,7 @@ Buffer::Buffer(VkDevice device,
   }
 
   vkBindBufferMemory(device_, handle_, memory_, 0);
+  SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Buffer created");
 }
 
 Buffer::~Buffer() {
