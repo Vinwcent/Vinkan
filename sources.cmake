@@ -5,6 +5,7 @@ list(APPEND VINKAN_SOURCES
     src/vinkan/wrappers/instance.cpp
     src/vinkan/wrappers/physical_device.cpp
     src/vinkan/wrappers/swapchain.cpp
+		src/vinkan/wrappers/buffer.cpp
 )
 list(APPEND VINKAN_HEADERS
     src/vinkan/wrappers/instance.hpp
@@ -13,6 +14,7 @@ list(APPEND VINKAN_HEADERS
     src/vinkan/wrappers/swapchain.hpp
     src/vinkan/wrappers/render_pass_builder.hpp
     src/vinkan/wrappers/render_pass.hpp
+		src/vinkan/wrappers/buffer.hpp
 )
 
 if(VINKAN_WITH_GLFW)

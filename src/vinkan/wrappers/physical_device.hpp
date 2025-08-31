@@ -28,6 +28,7 @@ class PhysicalDevice : public PtrHandleWrapper<VkPhysicalDevice> {
   // to select this physical device.
   SurfaceSupportDetails getSurfaceSupportDetails();
   std::vector<QueueFamilyInfo> getQueues();
+  VkPhysicalDeviceMemoryProperties getMemoryProperties();
 
  private:
   bool withSurfaceSupport = false;

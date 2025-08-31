@@ -61,6 +61,12 @@ std::vector<QueueFamilyInfo> PhysicalDevice::getQueues() {
   return getQueuesInfo_(handle_);
 }
 
+VkPhysicalDeviceMemoryProperties PhysicalDevice::getMemoryProperties() {
+  VkPhysicalDeviceMemoryProperties memProperties;
+  vkGetPhysicalDeviceMemoryProperties(handle_, &memProperties);
+  return memProperties;
+}
+
 bool PhysicalDevice::isSuitable_(VkPhysicalDevice physicalDevice,
                                  PhysicalDeviceInfo physicalDeviceInfo) const {
   VkPhysicalDeviceProperties physicalDeviceProperties;

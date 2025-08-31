@@ -4,15 +4,12 @@
 #include <vulkan/vulkan.h>
 
 #include <optional>
-#include <vector>
 
 #include "vinkan/generics/ptr_handle_wrapper.hpp"
+#include "vinkan/structs/sharing_mode.hpp"
 #include "vinkan/structs/surface_support_details.hpp"
 
-struct SharingMode {
-  VkSharingMode value;
-  std::optional<std::vector<uint32_t>> concurrentQueueFamilies;
-};
+namespace vinkan {
 
 struct SwapchainInfo {
   VkDevice device;
@@ -26,7 +23,6 @@ struct SwapchainInfo {
   SurfaceSupportDetails surfaceSupportDetails;
 };
 
-namespace vinkan {
 class Swapchain : public PtrHandleWrapper<VkSwapchainKHR> {
  public:
   Swapchain(SwapchainInfo swapchainInfo);
