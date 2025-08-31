@@ -25,7 +25,7 @@ class VinkanResources {
   }
 
   Buffer &get(BufferT bufferIdentifier) {
-    assert(!buffers_.contains(bufferIdentifier));
+    assert(buffers_.contains(bufferIdentifier));
     return *buffers_[bufferIdentifier];
   }
 
