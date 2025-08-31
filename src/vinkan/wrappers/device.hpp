@@ -16,15 +16,12 @@
 
 namespace vinkan {
 
-template <EnumType T>
-class DeviceBuilder;
-
 struct AllocatedQueueFamilyInfo {
   uint32_t queueFamilyIndex;  // Here it's the vulkan identifier
   uint32_t queueCount;        // Here it's the number of queues
 };
 
-template <typename T>
+template <EnumType T>
 class Device : public PtrHandleWrapper<VkDevice> {
  public:
   class Builder;
@@ -57,7 +54,7 @@ class Device : public PtrHandleWrapper<VkDevice> {
     handle_ = device;
   }
 
-  friend class DeviceBuilder<T>;
+  friend class Builder;
 };
 
 template <EnumType T>
@@ -71,10 +68,10 @@ struct QueueFamilyRequest {
 };
 
 template <EnumType T>
-class DeviceBuilder {
+class Device<T>::Builder {
  public:
-  DeviceBuilder(VkPhysicalDevice physicalDevice,
-                std::vector<QueueFamilyInfo> queuesInfo)
+  Builder(VkPhysicalDevice physicalDevice,
+          std::vector<QueueFamilyInfo> queuesInfo)
       : physicalDevice_(physicalDevice), queuesInfo_(queuesInfo) {}
 
   void addExtensions(const std::set<const char *> deviceExtensions) {
