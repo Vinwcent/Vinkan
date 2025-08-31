@@ -49,11 +49,14 @@ class RenderPassBuilder {
     intSubpassInfo_.push_back(intSubpassInfo);
     auto &info = intSubpassInfo_[intSubpassInfo_.size() - 1];
     VkSubpassDescription subpass{
-        .inputAttachmentCount = info.inputAttachments.size(),
+        .inputAttachmentCount =
+            static_cast<uint32_t>(info.inputAttachments.size()),
         .pInputAttachments = info.inputAttachments.data(),
-        .colorAttachmentCount = info.colorAttachments.size(),
+        .colorAttachmentCount =
+            static_cast<uint32_t>(info.colorAttachments.size()),
         .pColorAttachments = info.colorAttachments.data(),
-        .preserveAttachmentCount = info.preserveAttachments.size(),
+        .preserveAttachmentCount =
+            static_cast<uint32_t>(info.preserveAttachments.size()),
         .pPreserveAttachments = info.preserveAttachments.data()};
     if (info.depthAttachment.has_value()) {
       subpass.pDepthStencilAttachment = &info.depthAttachment.value();
