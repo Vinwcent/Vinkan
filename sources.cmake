@@ -11,6 +11,8 @@ list(APPEND VINKAN_HEADERS
     src/vinkan/wrappers/device_builder.hpp
     src/vinkan/wrappers/device.hpp
     src/vinkan/wrappers/swapchain.hpp
+    src/vinkan/wrappers/render_pass_builder.hpp
+    src/vinkan/wrappers/render_pass.hpp
 )
 
 if(VINKAN_WITH_GLFW)
