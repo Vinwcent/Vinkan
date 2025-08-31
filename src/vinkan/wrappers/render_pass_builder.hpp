@@ -9,6 +9,8 @@
 #include <vector>
 
 #include "vinkan/generics/concepts.hpp"
+#include "vinkan/logging/logger.hpp"
+#include "vinkan/wrappers/render_pass.hpp"
 namespace vinkan {
 
 template <EnumType T>
@@ -73,7 +75,7 @@ class RenderPassBuilder {
     subpassDependencies_.push_back(dependency);
   }
 
-  VkRenderPass build(VkDevice device) {
+  RenderPass<T> build(VkDevice device) {
     VkRenderPassCreateInfo renderPassInfo{};
     renderPassInfo.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO;
     renderPassInfo.attachmentCount = static_cast<uint32_t>(attachments_.size());
@@ -84,13 +86,17 @@ class RenderPassBuilder {
         static_cast<uint32_t>(subpassDependencies_.size());
     renderPassInfo.pDependencies = subpassDependencies_.data();
 
-    VkRenderPass renderPass;
+    VkRenderPass renderPassHandle;
     VkResult result =
-        vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPass);
+        vkCreateRenderPass(device, &renderPassInfo, nullptr, &renderPassHandle);
 
     if (result != VK_SUCCESS) {
       throw std::runtime_error("Failed to create render pass!");
     }
+    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "RenderPass created");
+
+    auto renderPass =
+        RenderPass<T>(device, renderPassHandle, attachmentIndices);
 
     return renderPass;
   }
