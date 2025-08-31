@@ -12,11 +12,11 @@
 namespace vinkan {
 
 template <EnumType T>
-class SubpassInfo {
-  std::vector<T> colorAttachments;
-  std::vector<T> inputAttachments;
-  std::vector<T> preserveAttachments;
-  std::optional<T> depthStencilAttachment;
+struct SubpassInfo {
+  std::vector<T> colorAttachments{};
+  std::vector<T> inputAttachments{};
+  std::vector<T> preserveAttachments{};
+  std::optional<T> depthStencilAttachment = std::nullopt;
   VkPipelineStageFlags dstStage;
   VkAccessFlags dstFlags;
 };
