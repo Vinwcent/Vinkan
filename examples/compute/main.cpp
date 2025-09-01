@@ -9,13 +9,14 @@ enum class MyAppQueue { COMPUTE_QUEUE };
 enum class MyAppDescriptorSet { SIMPLE_DESCRIPTOR_SET };
 enum class MyAppDescriptorSetLayout { SIMPLE_DESCRIPTOR_SET_LAYOUT };
 enum class MyAppDescriptorPool { SIMPLE_DESCRIPTOR_POOL };
+enum class MyAppBuffers { SIMPLE_BUFFER };
 
-using ResourceBinder =
-    vinkan::ResourcesBinder<MyAppDescriptorSet, MyAppDescriptorSetLayout,
-                            MyAppDescriptorPool>;
+using MyAppResources =
+    vinkan::VinkanResources<MyAppBuffers, MyAppDescriptorSet,
+                            MyAppDescriptorSetLayout, MyAppDescriptorPool>;
 
 int main() {
-  // INSTANCE CREATION
+  // Create the instance
   std::vector<const char *> extraExtensions{};
   vinkan::InstanceInfo instanceInfo{
       .appName = "Example compute app",
@@ -27,9 +28,9 @@ int main() {
       .validationLayers = MyAppValidationLayers,
       .includePortabilityExtensions = NEED_PORTABILITY_EXTENSIONS,
       .extraVkExtensions = extraExtensions};
-
   vinkan::Instance instance(instanceInfo);
-  // PHYSICAL DEVICE CREATION WITH SUPPORT FOR COMPUTE QUEUE
+
+  // Create the physical device
   vinkan::PhysicalDeviceInfo physicalDeviceInfo{
       .requestedQueueFlags = {VK_QUEUE_COMPUTE_BIT},
       .surfaceSupportRequested = std::nullopt,
@@ -37,7 +38,7 @@ int main() {
   vinkan::PhysicalDevice physicalDevice(physicalDeviceInfo,
                                         instance.getHandle());
 
-  // DEVICE CREATION WITH ONE COMPUTE QUEUE
+  // Create the device (with a one compute queue on one queue family)
   vinkan::Device<MyAppQueue>::Builder deviceBuilder(physicalDevice.getHandle(),
                                                     physicalDevice.getQueues());
   deviceBuilder.addExtensions(DEVICE_EXTENSIONS);
@@ -48,12 +49,15 @@ int main() {
       .nQueues = 1,
       .queuePriorities = {1.0}};
   bool success = false;
-  deviceBuilder.addQueue(queueRequest, true, success);
+  bool mustBeInNewQueueFamily = true;
+  deviceBuilder.addQueue(queueRequest, mustBeInNewQueueFamily, success);
   assert(success);
   auto device = deviceBuilder.build();
 
-  ResourceBinder resourceBinder(device->getHandle());
-  // SET LAYOUT
+  // Initialize the resources
+  MyAppResources resources(device->getHandle(),
+                           physicalDevice.getMemoryProperties());
+  // Create a set layout with one storage buffer on binding 0
   vinkan::SetLayoutInfo layoutInfo{
       .nSets = 1,
       .bindings =
@@ -66,15 +70,15 @@ int main() {
               },
           },
   };
-  resourceBinder.createSetLayout(
+  resources.createSetLayout(
       MyAppDescriptorSetLayout::SIMPLE_DESCRIPTOR_SET_LAYOUT, layoutInfo);
 
-  // POOL FROM THE SET LAYOUT
-  resourceBinder.createPool(
+  // Create a pool from this layout info
+  resources.createPool(
       MyAppDescriptorPool::SIMPLE_DESCRIPTOR_POOL,
       {MyAppDescriptorSetLayout::SIMPLE_DESCRIPTOR_SET_LAYOUT});
 
-  // BUFFER CREATION
+  // Create a buffer
   vinkan::BufferInfo bufferInfo{
       .instanceSize = 256,
       .instanceCount = 1,
@@ -83,15 +87,12 @@ int main() {
       .memoryPropertyFlags = VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT |
                              VK_MEMORY_PROPERTY_HOST_COHERENT_BIT,
   };
-  vinkan::Buffer buffer(device->getHandle(),
-                        physicalDevice.getMemoryProperties(), bufferInfo);
+  resources.create(MyAppBuffers::SIMPLE_BUFFER, bufferInfo);
 
-  // DESCRIPTOR SET CREATION (Write directly)
-  vinkan::ResourceDescriptorInfo resourceInfo{
-      .bindingIndex = 0,
-      .vkBufferInfo = {buffer.descriptorInfo()},
-  };
-  resourceBinder.createSet(
-      MyAppDescriptorSet::SIMPLE_DESCRIPTOR_SET,
-      MyAppDescriptorSetLayout::SIMPLE_DESCRIPTOR_SET_LAYOUT, {resourceInfo});
+  // Create a descriptor set with the buffer at binding 0
+  vinkan::VinkanBufferBinding<MyAppBuffers> binding{
+      .bindingIndex = 0, .buffer = MyAppBuffers::SIMPLE_BUFFER};
+  resources.createSet(MyAppDescriptorSet::SIMPLE_DESCRIPTOR_SET,
+                      MyAppDescriptorSetLayout::SIMPLE_DESCRIPTOR_SET_LAYOUT,
+                      {binding});
 }
