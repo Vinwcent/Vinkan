@@ -5,9 +5,13 @@
 
 namespace vinkan {
 
+///////////////
+//  BUILDER  //
+///////////////
+
 DescriptorPool::Builder &DescriptorPool::Builder::addPoolSize(
     VkDescriptorType descriptorType, uint32_t count) {
-  poolSizes.push_back({descriptorType, count});
+  poolSizes.emplace_back(descriptorType, count);
   return *this;
 }
 
@@ -25,6 +29,10 @@ std::unique_ptr<DescriptorPool> DescriptorPool::Builder::build() const {
   return std::unique_ptr<DescriptorPool>(
       new DescriptorPool(device_, maxSets, poolFlags, poolSizes));
 }
+
+///////////////
+//  WRAPPER  //
+///////////////
 
 DescriptorPool::DescriptorPool(
     VkDevice device, uint32_t maxSets, VkDescriptorPoolCreateFlags poolFlags,
@@ -64,7 +72,7 @@ bool DescriptorPool::allocateDescriptorSet(
 }
 
 void DescriptorPool::freeDescriptors(
-    std::vector<VkDescriptorSet> &descriptors) const {
+    const std::vector<VkDescriptorSet> &descriptors) const {
   vkFreeDescriptorSets(device_, descriptorPool,
                        static_cast<uint32_t>(descriptors.size()),
                        descriptors.data());

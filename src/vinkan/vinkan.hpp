@@ -3,7 +3,8 @@
 
 // Wrappers
 #include "glfw/glfw_vk_surface.hpp"
-#include "vinkan_resources.hpp"
+#include "resources/resources_binder.hpp"
+#include "resources/vinkan_resources.hpp"
 #include "wrappers/buffer.hpp"
 #include "wrappers/device.hpp"
 #include "wrappers/instance.hpp"

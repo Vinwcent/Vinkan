@@ -32,7 +32,7 @@ class DescriptorPool {
 
   bool allocateDescriptorSet(const VkDescriptorSetLayout descriptorSetLayout,
                              VkDescriptorSet &descriptor) const;
-  void freeDescriptors(std::vector<VkDescriptorSet> &descriptors) const;
+  void freeDescriptors(const std::vector<VkDescriptorSet> &descriptors) const;
   void resetPool();
 
  private:

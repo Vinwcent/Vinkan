@@ -16,6 +16,10 @@
 
 namespace vinkan {
 
+///////////////
+//  WRAPPER  //
+///////////////
+
 struct AllocatedQueueFamilyInfo {
   uint32_t queueFamilyIndex;  // Here it's the vulkan identifier
   uint32_t queueCount;        // Here it's the number of queues
@@ -56,6 +60,10 @@ class Device : public PtrHandleWrapper<VkDevice> {
 
   friend class Builder;
 };
+
+///////////////
+//  BUILDER  //
+///////////////
 
 template <EnumType T>
 struct QueueFamilyRequest {

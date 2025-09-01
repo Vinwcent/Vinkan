@@ -37,5 +37,9 @@ target_include_directories(${VINKAN_LIBRARY_NAME} PRIVATE
 set(VINKAN_INCLUDE_DIRS 
     ${CMAKE_CURRENT_SOURCE_DIR}/src 
     ${Vulkan_INCLUDE_DIRS} 
-    PARENT_SCOPE
 )
+
+option(VINKAN_BUILD_EXAMPLES "Build examples" OFF)
+if(VINKAN_BUILD_EXAMPLES)
+    add_subdirectory(examples)
+endif()
