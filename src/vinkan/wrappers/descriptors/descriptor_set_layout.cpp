@@ -52,13 +52,13 @@ DescriptorSetLayout::DescriptorSetLayout(
   descriptorSetLayoutInfo.pBindings = layoutBindings.data();
 
   if (vkCreateDescriptorSetLayout(device_, &descriptorSetLayoutInfo, nullptr,
-                                  &descriptorSetLayout) != VK_SUCCESS) {
+                                  &handle_) != VK_SUCCESS) {
     throw std::runtime_error("Could not create the descriptor set layout");
   }
 }
 
 DescriptorSetLayout::~DescriptorSetLayout() {
-  vkDestroyDescriptorSetLayout(device_, descriptorSetLayout, nullptr);
+  vkDestroyDescriptorSetLayout(device_, handle_, nullptr);
 }
 
 VkDescriptorSetLayoutBinding DescriptorSetLayout::getLayoutBinding(

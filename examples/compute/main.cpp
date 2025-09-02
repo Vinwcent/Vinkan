@@ -5,15 +5,26 @@
 const std::vector<const char *> MyAppValidationLayers = {
     "VK_LAYER_KHRONOS_validation"};
 
+// Queue
 enum class MyAppQueue { COMPUTE_QUEUE };
+
+// Resources
 enum class MyAppDescriptorSet { SIMPLE_DESCRIPTOR_SET };
 enum class MyAppDescriptorSetLayout { SIMPLE_DESCRIPTOR_SET_LAYOUT };
 enum class MyAppDescriptorPool { SIMPLE_DESCRIPTOR_POOL };
 enum class MyAppBuffers { SIMPLE_BUFFER };
 
+// Pipeline
+enum class MyAppPipelineLayout { COMPUTE_PIP_LAYOUT };
+
+// Push constants
+struct MyAppPC {
+  uint32_t value;
+};
+
 using MyAppResources =
-    vinkan::VinkanResources<MyAppBuffers, MyAppDescriptorSet,
-                            MyAppDescriptorSetLayout, MyAppDescriptorPool>;
+    vinkan::Resources<MyAppBuffers, MyAppDescriptorSet,
+                      MyAppDescriptorSetLayout, MyAppDescriptorPool>;
 
 int main() {
   // Create the instance
@@ -95,4 +106,11 @@ int main() {
   resources.createSet(MyAppDescriptorSet::SIMPLE_DESCRIPTOR_SET,
                       MyAppDescriptorSetLayout::SIMPLE_DESCRIPTOR_SET_LAYOUT,
                       {binding});
+
+  // Create a pipeline layout
+  vinkan::Pipelines<MyAppPipelineLayout> pipelines_(device->getHandle());
+  pipelines_.createLayout<MyAppPC>(
+      MyAppPipelineLayout::COMPUTE_PIP_LAYOUT,
+      {resources.get(MyAppDescriptorSetLayout::SIMPLE_DESCRIPTOR_SET_LAYOUT)},
+      VK_SHADER_STAGE_COMPUTE_BIT);
 }

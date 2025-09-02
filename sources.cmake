@@ -17,12 +17,14 @@ list(APPEND VINKAN_HEADERS
     src/vinkan/wrappers/swapchain.hpp
     src/vinkan/wrappers/render_pass.hpp
 		src/vinkan/wrappers/buffer.hpp
-		src/vinkan/resources/vinkan_resources.hpp
+		src/vinkan/resources/resources.hpp
 		src/vinkan/resources/resources_binder.hpp
 
 		src/vinkan/wrappers/descriptors/descriptor_pool.hpp
 		src/vinkan/wrappers/descriptors/descriptor_set_layout.hpp
 		src/vinkan/wrappers/descriptors/descriptor_set.hpp
+
+		src/vinkan/pipelines.hpp
 )
 
 if(VINKAN_WITH_GLFW)

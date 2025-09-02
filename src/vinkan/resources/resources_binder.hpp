@@ -77,17 +77,17 @@ class ResourcesBinder {
     SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Descriptor set created");
   }
 
-  DescriptorSet &get(SetT setIdentifier) {
+  VkDescriptorSet getHandle(SetT setIdentifier) {
     assert(sets_.contains(setIdentifier));
-    return *sets_[setIdentifier];
+    return sets_[setIdentifier]->getHandle();
   }
-  DescriptorSetLayout &get(SetLayoutT setLayoutIdentifier) {
+  VkDescriptorSetLayout get(SetLayoutT setLayoutIdentifier) {
     assert(setLayouts_.contains(setLayoutIdentifier));
-    return *setLayouts_[setLayoutIdentifier];
+    return setLayouts_[setLayoutIdentifier]->getHandle();
   }
-  DescriptorPool &get(PoolT poolIdentifier) {
+  VkDescriptorPool get(PoolT poolIdentifier) {
     assert(pools_.contains(poolIdentifier));
-    return *pools_[poolIdentifier];
+    return pools_[poolIdentifier]->getHandle();
   }
 
  private:

@@ -6,6 +6,8 @@
 #include <memory>
 #include <unordered_map>
 
+#include "vinkan/generics/ptr_handle_wrapper.hpp"
+
 namespace vinkan {
 
 struct DescriptorSetLayoutBinding {
@@ -15,7 +17,7 @@ struct DescriptorSetLayoutBinding {
   uint32_t count = 1;
 };
 
-class DescriptorSetLayout {
+class DescriptorSetLayout : public PtrHandleWrapper<VkDescriptorSetLayout> {
  public:
   class Builder {
    public:
@@ -33,9 +35,7 @@ class DescriptorSetLayout {
   DescriptorSetLayout(const DescriptorSetLayout &) = delete;
   DescriptorSetLayout &operator=(const DescriptorSetLayout &) = delete;
 
-  VkDescriptorSetLayout getDescriptorSetLayout() const {
-    return descriptorSetLayout;
-  }
+  VkDescriptorSetLayout getDescriptorSetLayout() const { return handle_; }
 
   VkDescriptorSetLayoutBinding getLayoutBinding(uint32_t bindingIndex) const;
 
@@ -44,7 +44,6 @@ class DescriptorSetLayout {
       VkDevice device,
       std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings);
   VkDevice device_;
-  VkDescriptorSetLayout descriptorSetLayout;
   std::unordered_map<uint32_t, VkDescriptorSetLayoutBinding> bindings_;
 
   friend class Builder;

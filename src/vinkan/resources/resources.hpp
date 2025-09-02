@@ -1,5 +1,5 @@
-#ifndef VINKAN_VINKAN_RESOURCES_HPP
-#define VINKAN_VINKAN_RESOURCES_HPP
+#ifndef VINKAN_RESOURCES_HPP
+#define VINKAN_RESOURCES_HPP
 #include <vulkan/vulkan.h>
 
 #include <map>
@@ -18,10 +18,10 @@ struct VinkanBufferBinding {
 };
 
 template <EnumType BufferT, EnumType SetT, EnumType SetLayoutT, EnumType PoolT>
-class VinkanResources {
+class Resources {
  public:
-  VinkanResources(VkDevice device,
-                  VkPhysicalDeviceMemoryProperties deviceMemoryProperties)
+  Resources(VkDevice device,
+            VkPhysicalDeviceMemoryProperties deviceMemoryProperties)
       : device_(device),
         deviceMemoryProperties_(deviceMemoryProperties),
         resourcesBinder_(device) {}
@@ -36,6 +36,18 @@ class VinkanResources {
   Buffer &get(BufferT bufferIdentifier) {
     assert(buffers_.contains(bufferIdentifier));
     return *buffers_[bufferIdentifier];
+  }
+
+  VkDescriptorSet get(SetT descriptorSetIdentifier) {
+    return resourcesBinder_.get(descriptorSetIdentifier);
+  }
+
+  VkDescriptorSetLayout get(SetLayoutT descriptorSetLayoutIdentifier) {
+    return resourcesBinder_.get(descriptorSetLayoutIdentifier);
+  }
+
+  VkDescriptorPool get(PoolT descriptorPool) {
+    return resourcesBinder_.get(descriptorPool);
   }
 
   void createPool(PoolT pool,
