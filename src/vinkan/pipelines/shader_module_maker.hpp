@@ -1,7 +1,10 @@
 #ifndef VINKAN_SHADER_MODULE_MAKER_HPP
 #define VINKAN_SHADER_MODULE_MAKER_HPP
+#include <vulkan/vulkan.h>
+
 #include <cstddef>
-#include <vinkan/vinkan.hpp>
+#include <string>
+#include <vector>
 
 namespace vinkan {
 

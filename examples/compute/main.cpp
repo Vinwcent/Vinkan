@@ -16,6 +16,7 @@ enum class MyAppDescriptorPool { SIMPLE_DESCRIPTOR_POOL };
 enum class MyAppBuffers { SIMPLE_BUFFER };
 
 // Pipeline
+enum class MyAppPipeline { COMPUTE_PIPELINE };
 enum class MyAppPipelineLayout { COMPUTE_PIP_LAYOUT };
 
 // Push constants
@@ -108,18 +109,21 @@ int main() {
                       MyAppDescriptorSetLayout::SIMPLE_DESCRIPTOR_SET_LAYOUT,
                       {binding});
 
+  // Initialize the pipelines
+  vinkan::Pipelines<MyAppPipeline, MyAppPipelineLayout> pipelines_(
+      device->getHandle());
   // Create a pipeline layout
-  vinkan::Pipelines<MyAppPipelineLayout> pipelines_(device->getHandle());
   pipelines_.createLayout<MyAppPC>(
       MyAppPipelineLayout::COMPUTE_PIP_LAYOUT,
       {resources.get(MyAppDescriptorSetLayout::SIMPLE_DESCRIPTOR_SET_LAYOUT)},
       VK_SHADER_STAGE_COMPUTE_BIT);
 
-  // Shader stage
-  vinkan::ShaderModuleMaker shaderModuleMaker(device->getHandle());
+  // Create a pipeline with this layout
   vinkan::ShaderFileInfo shaderFileInfo{
       .shaderFilepath =
           std::string(COMPILED_SHADERS_DIR) + "/addition_shader.comp.spv",
       .shaderStage = VK_SHADER_STAGE_COMPUTE_BIT};
-  shaderModuleMaker(shaderFileInfo);
+  pipelines_.createComputePipeline(MyAppPipeline::COMPUTE_PIPELINE,
+                                   MyAppPipelineLayout::COMPUTE_PIP_LAYOUT,
+                                   shaderFileInfo);
 }

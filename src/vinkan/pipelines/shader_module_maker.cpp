@@ -1,5 +1,6 @@
 #include "shader_module_maker.hpp"
 
+#include "vinkan/logging/logger.hpp"
 #include "vinkan/utils/file_io.hpp"
 namespace vinkan {
 
