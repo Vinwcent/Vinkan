@@ -1,5 +1,6 @@
 #include "descriptor_set.hpp"
 
+#include <algorithm>
 #include <cassert>
 
 namespace vinkan {

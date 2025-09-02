@@ -1,3 +1,4 @@
+#include <vinkan/pipelines/shader_module_maker.hpp>
 #include <vinkan/vinkan.hpp>
 
 #include "m_series_portability.hpp"
@@ -91,7 +92,7 @@ int main() {
 
   // Create a buffer
   vinkan::BufferInfo bufferInfo{
-      .instanceSize = 256,
+      .instanceSize = 64 * sizeof(uint32_t),
       .instanceCount = 1,
       .usageFlags = VK_BUFFER_USAGE_STORAGE_BUFFER_BIT,
       .sharingMode = {.value = VK_SHARING_MODE_EXCLUSIVE},
@@ -113,4 +114,12 @@ int main() {
       MyAppPipelineLayout::COMPUTE_PIP_LAYOUT,
       {resources.get(MyAppDescriptorSetLayout::SIMPLE_DESCRIPTOR_SET_LAYOUT)},
       VK_SHADER_STAGE_COMPUTE_BIT);
+
+  // Shader stage
+  vinkan::ShaderModuleMaker shaderModuleMaker(device->getHandle());
+  vinkan::ShaderFileInfo shaderFileInfo{
+      .shaderFilepath =
+          std::string(COMPILED_SHADERS_DIR) + "/addition_shader.comp.spv",
+      .shaderStage = VK_SHADER_STAGE_COMPUTE_BIT};
+  shaderModuleMaker(shaderFileInfo);
 }

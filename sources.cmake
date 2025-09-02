@@ -10,6 +10,8 @@ list(APPEND VINKAN_SOURCES
 		src/vinkan/wrappers/descriptors/descriptor_pool.cpp
 		src/vinkan/wrappers/descriptors/descriptor_set_layout.cpp
 		src/vinkan/wrappers/descriptors/descriptor_set.cpp
+
+		src/vinkan/pipelines/shader_module_maker.cpp
 )
 list(APPEND VINKAN_HEADERS
     src/vinkan/wrappers/instance.hpp
@@ -24,7 +26,8 @@ list(APPEND VINKAN_HEADERS
 		src/vinkan/wrappers/descriptors/descriptor_set_layout.hpp
 		src/vinkan/wrappers/descriptors/descriptor_set.hpp
 
-		src/vinkan/pipelines.hpp
+		src/vinkan/pipelines/pipelines.hpp
+		src/vinkan/pipelines/shader_module_maker.hpp
 )
 
 if(VINKAN_WITH_GLFW)
