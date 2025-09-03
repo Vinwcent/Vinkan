@@ -15,7 +15,7 @@ Swapchain::Swapchain(SwapchainInfo swapchainInfo) {
              .findBestPresentMode({swapchainInfo.presentMode})
              .has_value() &&
          "Surface doesn't support the selected present mode");
-  assert(swapchainInfo.imageCount <
+  assert(swapchainInfo.imageCount <=
              swapchainInfo.surfaceSupportDetails.capabilities.maxImageCount &&
          "Surface can't support the selected image count");
 

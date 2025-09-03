@@ -4,25 +4,34 @@
 #include <vulkan/vulkan.h>
 
 #include <map>
+#include <memory>
+#include <optional>
+#include <set>
+#include <vector>
 
 #include "vinkan/generics/concepts.hpp"
 #include "vinkan/generics/ptr_handle_wrapper.hpp"
+#include "vinkan/logging/logger.hpp"
+#include "vinkan/structs/queue_family_info.hpp"
 
 namespace vinkan {
 
-template <EnumType T>
-class DeviceBuilder;
+///////////////
+//  WRAPPER  //
+///////////////
 
 struct AllocatedQueueFamilyInfo {
   uint32_t queueFamilyIndex;  // Here it's the vulkan identifier
   uint32_t queueCount;        // Here it's the number of queues
 };
 
-template <typename T>
+template <EnumType T>
 class Device : public PtrHandleWrapper<VkDevice> {
  public:
+  class Builder;
+
   VkQueue getQueue(T queueIdentifier, uint32_t queueNumber) {
-    auto& allocInfo = familyIdentifierToAllocInfo_[queueIdentifier];
+    auto &allocInfo = familyIdentifierToAllocInfo_[queueIdentifier];
     assert(queueNumber < allocInfo.queueCount);
     VkQueue queue;
     vkGetDeviceQueue(handle_, allocInfo.queueFamilyIndex, queueNumber, &queue);
@@ -30,7 +39,7 @@ class Device : public PtrHandleWrapper<VkDevice> {
   }
 
   uint32_t getQueueFamilyIndex(T queueIdentifier) {
-    auto& allocInfo = familyIdentifierToAllocInfo_[queueIdentifier];
+    auto &allocInfo = familyIdentifierToAllocInfo_[queueIdentifier];
     return allocInfo.queueFamilyIndex;
   }
 
@@ -38,27 +47,6 @@ class Device : public PtrHandleWrapper<VkDevice> {
     if (isHandleValid()) {
       vkDestroyDevice(handle_, nullptr);
     }
-  }
-
-  Device(Device&& other) noexcept
-      : familyIdentifierToAllocInfo_(
-            std::move(other.familyIdentifierToAllocInfo_)) {
-    handle_ = other.handle_;
-    other.handle_ = VK_NULL_HANDLE;
-  }
-
-  // Move assignment
-  Device& operator=(Device&& other) noexcept {
-    if (this != &other) {
-      if (handle_ != VK_NULL_HANDLE) {
-        vkDestroyDevice(handle_, nullptr);
-      }
-      handle_ = other.handle_;
-      familyIdentifierToAllocInfo_ =
-          std::move(other.familyIdentifierToAllocInfo_);
-      other.handle_ = VK_NULL_HANDLE;
-    }
-    return *this;
   }
 
  private:
@@ -70,7 +58,140 @@ class Device : public PtrHandleWrapper<VkDevice> {
     handle_ = device;
   }
 
-  friend class DeviceBuilder<T>;
+  friend class Builder;
+};
+
+///////////////
+//  BUILDER  //
+///////////////
+
+template <EnumType T>
+struct QueueFamilyRequest {
+  T queueFamilyIdentifier;
+
+  uint32_t flagsRequested;
+  std::optional<VkSurfaceKHR> surfacePresentationSupport;
+  uint32_t nQueues;
+  std::vector<float> queuePriorities;
+};
+
+template <EnumType T>
+class Device<T>::Builder {
+ public:
+  Builder(VkPhysicalDevice physicalDevice,
+          std::vector<QueueFamilyInfo> queuesInfo)
+      : physicalDevice_(physicalDevice), queuesInfo_(queuesInfo) {}
+
+  void addExtensions(const std::set<const char *> deviceExtensions) {
+    deviceExtensions_.insert(deviceExtensions.begin(), deviceExtensions.end());
+  }
+  void addQueue(QueueFamilyRequest<T> &queueRequest, bool differentFromPrevious,
+                bool &success) {
+    assert(queueRequest.queuePriorities.size() == queueRequest.nQueues);
+    std::optional<QueueFamilyInfo> selectedQueueOpt = std::nullopt;
+    for (auto &queueInfo : queuesInfo_) {
+      // If we asked for a different and we have it, we continue
+      if (differentFromPrevious && isPreviousQueue_(queueInfo)) {
+        continue;
+      }
+      // If it fits the request, we're done
+      if (queueFitRequest_(queueInfo, queueRequest)) {
+        selectedQueueOpt = queueInfo;
+        break;
+      }
+    }
+    // If we didn't find any, we go out
+    if (!selectedQueueOpt.has_value()) {
+      success = false;
+      return;
+    }
+    auto selectedQueue = selectedQueueOpt.value();
+    familyIdentifierToAllocInfo_[queueRequest.queueFamilyIdentifier] = {
+        selectedQueue.queueIndex, queueRequest.nQueues};
+    VkDeviceQueueCreateInfo queueCreateInfo = {};
+    queueCreateInfo.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO;
+    queueCreateInfo.queueFamilyIndex = selectedQueue.queueIndex;
+    queueCreateInfo.queueCount = queueRequest.nQueues;
+    queueCreateInfo.pQueuePriorities = queueRequest.queuePriorities.data();
+    queueCreateInfo_.push_back(queueCreateInfo);
+    success = true;
+  }
+  std::unique_ptr<Device<T>> build() {
+    VkPhysicalDeviceVulkan12Features features12{};
+    features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
+    features12.runtimeDescriptorArray = VK_TRUE;
+    features12.pNext = nullptr;
+
+    VkPhysicalDeviceFeatures deviceFeatures{};
+    deviceFeatures.samplerAnisotropy = VK_TRUE;
+    deviceFeatures.fragmentStoresAndAtomics = VK_TRUE;
+    VkDeviceCreateInfo createInfo{};
+    createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
+
+    createInfo.queueCreateInfoCount =
+        static_cast<uint32_t>(queueCreateInfo_.size());
+    createInfo.pQueueCreateInfos = queueCreateInfo_.data();
+
+    createInfo.pEnabledFeatures = &deviceFeatures;
+    createInfo.pNext = &features12;
+    std::vector<const char *> deviceExtensionsVector(deviceExtensions_.begin(),
+                                                     deviceExtensions_.end());
+    createInfo.enabledExtensionCount =
+        static_cast<uint32_t>(deviceExtensionsVector.size());
+    createInfo.ppEnabledExtensionNames = deviceExtensionsVector.data();
+
+    createInfo.enabledLayerCount = 0;
+
+    VkDevice deviceHandle;
+    if (vkCreateDevice(physicalDevice_, &createInfo, nullptr, &deviceHandle) !=
+        VK_SUCCESS) {
+      throw std::runtime_error("Could not create the vulkan device");
+    }
+    std::unique_ptr<Device<T>> device = std::unique_ptr<Device<T>>(
+        new Device<T>(deviceHandle, familyIdentifierToAllocInfo_));
+    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Device created !");
+    return std::move(device);
+  }
+
+ private:
+  std::vector<QueueFamilyInfo> queuesInfo_;
+
+  std::map<T, AllocatedQueueFamilyInfo> familyIdentifierToAllocInfo_{};
+
+  // Build info
+  VkPhysicalDevice physicalDevice_;
+  std::set<const char *> deviceExtensions_{};
+  std::vector<VkDeviceQueueCreateInfo> queueCreateInfo_{};
+
+  bool isPreviousQueue_(QueueFamilyInfo queueInfo) const {
+    for (auto previousQueueCreate : queueCreateInfo_) {
+      if (queueInfo.queueIndex == previousQueueCreate.queueFamilyIndex) {
+        return true;
+      }
+    }
+    return false;
+  }
+
+  bool queueFitRequest_(QueueFamilyInfo queueInfo,
+                        QueueFamilyRequest<T> queueRequest) const {
+    bool validFlags = false;
+    bool validSurface = false;
+    bool validCount = false;
+    if (queueInfo.supportQueueFlags(queueRequest.flagsRequested)) {
+      validFlags = true;
+    }
+    if (queueInfo.queueCount >= queueRequest.nQueues) {
+      validCount = true;
+    }
+    if (queueRequest.surfacePresentationSupport.has_value()) {
+      validSurface = queueInfo.supportPresentation(
+          queueRequest.surfacePresentationSupport.value());
+    } else {
+      // We valid because there's no surface to support
+      validSurface = true;
+    }
+    return validSurface && validCount && validFlags;
+  }
 };
 
 }  // namespace vinkan
