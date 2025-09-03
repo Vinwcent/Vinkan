@@ -96,6 +96,53 @@ class Pipelines {
     SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Pipeline created");
   }
 
+  template <ValidShaderInfo ShaderInfoT>
+  void createGraphicsPipeline(
+      PipelineT pipelineIdentifier,
+      GraphicsPipelineInfo<PipelineLayoutT, ShaderInfoT> pipelineInfo) {
+    assert(pipelineLayouts_.contains(pipelineInfo.layoutIdentifier));
+    auto pipelineLayout = pipelineLayouts_[pipelineInfo.layoutIdentifier];
+    ShaderModuleMaker moduleMaker(device_);
+    auto vertexShaderStage = moduleMaker(pipelineInfo.vertexShaderInfo);
+    auto fragmentShaderStage = moduleMaker(pipelineInfo.fragmentShaderInfo);
+    VkPipelineShaderStageCreateInfo shaderStages[] = {vertexShaderStage,
+                                                      fragmentShaderStage};
+    VkGraphicsPipelineCreateInfo graphicsPipelineCreateInfo{};
+    graphicsPipelineCreateInfo.sType =
+        VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO;
+    graphicsPipelineCreateInfo.stageCount = 2;
+    graphicsPipelineCreateInfo.pStages = shaderStages;
+    graphicsPipelineCreateInfo.pVertexInputState =
+        &pipelineInfo.vertexInputState;
+    graphicsPipelineCreateInfo.pInputAssemblyState =
+        &pipelineInfo.inputAssemblyInfo;
+    graphicsPipelineCreateInfo.pViewportState = &pipelineInfo.viewportInfo;
+    graphicsPipelineCreateInfo.pRasterizationState =
+        &pipelineInfo.rasterizationInfo;
+    graphicsPipelineCreateInfo.pMultisampleState =
+        &pipelineInfo.multisampleInfo;
+    graphicsPipelineCreateInfo.pColorBlendState = &pipelineInfo.colorBlendInfo;
+    graphicsPipelineCreateInfo.pDepthStencilState =
+        &pipelineInfo.depthStencilInfo;
+    graphicsPipelineCreateInfo.pDynamicState = &pipelineInfo.dynamicStateInfo;
+    graphicsPipelineCreateInfo.layout = pipelineLayout;
+    graphicsPipelineCreateInfo.renderPass = pipelineInfo.renderPass;
+    graphicsPipelineCreateInfo.subpass = pipelineInfo.subpass;
+    graphicsPipelineCreateInfo.basePipelineIndex = -1;
+    graphicsPipelineCreateInfo.basePipelineHandle = VK_NULL_HANDLE;
+    graphicsPipelineCreateInfo.pNext = nullptr;
+    graphicsPipelineCreateInfo.flags = 0;
+    VkPipeline pipeline;
+    if (vkCreateGraphicsPipelines(device_, VK_NULL_HANDLE, 1,
+                                  &graphicsPipelineCreateInfo, nullptr,
+                                  &pipeline) != VK_SUCCESS) {
+      throw std::runtime_error("Could not create the graphics pipeline");
+    }
+    pipelines_[pipelineIdentifier] = pipeline;
+    pipelineToBindPoints_[pipelineIdentifier] = VK_PIPELINE_BIND_POINT_GRAPHICS;
+    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Pipeline created");
+  }
+
   void bindCmdBuffer(VkCommandBuffer commandBuffer, PipelineT pipeline) {
     assert(pipelines_.contains(pipeline));
     vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,

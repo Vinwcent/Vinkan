@@ -9,5 +9,29 @@ struct ComputePipelineInfo {
   ShaderInfoT shaderInfo;
 };
 
+template <EnumType PipelineLayoutT, ValidShaderInfo ShaderInfoT>
+struct GraphicsPipelineInfo {
+  // Resources info
+  PipelineLayoutT layoutIdentifier;
+
+  // Input info
+  ShaderInfoT vertexShaderInfo;
+  ShaderInfoT fragmentShaderInfo;
+  VkPipelineVertexInputStateCreateInfo vertexInputState;
+
+  // RenderPass info
+  VkRenderPass renderPass;
+  uint32_t subpass;
+
+  // Configuration info
+  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo;
+  VkPipelineViewportStateCreateInfo viewportInfo;
+  VkPipelineRasterizationStateCreateInfo rasterizationInfo;
+  VkPipelineMultisampleStateCreateInfo multisampleInfo;
+  VkPipelineColorBlendStateCreateInfo colorBlendInfo;
+  VkPipelineDepthStencilStateCreateInfo depthStencilInfo;
+  VkPipelineDynamicStateCreateInfo dynamicStateInfo;
+};
+
 }  // namespace vinkan
 #endif
