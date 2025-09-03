@@ -1,3 +1,4 @@
+#include <iostream>
 #include <vinkan/pipelines/shader_module_maker.hpp>
 #include <vinkan/vinkan.hpp>
 
@@ -18,6 +19,12 @@ enum class MyAppBuffers { SIMPLE_BUFFER };
 // Pipeline
 enum class MyAppPipeline { COMPUTE_PIPELINE };
 enum class MyAppPipelineLayout { COMPUTE_PIP_LAYOUT };
+
+// Command buffers
+enum class MyAppCommandBuffer { COMPUTE_CMD };
+enum class MyAppCommandPool { COMPUTE_POOL };
+enum class MyAppSingleUseCommandPool { SINGLE_USE_POOL };
+enum class MyAppFence { COMPUTE_FENCE };
 
 // Push constants
 struct MyAppPC {
@@ -102,6 +109,13 @@ int main() {
   };
   resources.create(MyAppBuffers::SIMPLE_BUFFER, bufferInfo);
 
+  // Fill the buffer with value 22 everywhere
+  vinkan::Buffer &buffer = resources.get(MyAppBuffers::SIMPLE_BUFFER);
+  std::vector<uint32_t> bufferData(64, 10);
+  buffer.map();
+  buffer.writeToBuffer(bufferData.data(), VK_WHOLE_SIZE, 0);
+  buffer.unmap();
+
   // Create a descriptor set with the buffer at binding 0
   vinkan::VinkanBufferBinding<MyAppBuffers> binding{
       .bindingIndex = 0, .buffer = MyAppBuffers::SIMPLE_BUFFER};
@@ -126,4 +140,59 @@ int main() {
   pipelines_.createComputePipeline(MyAppPipeline::COMPUTE_PIPELINE,
                                    MyAppPipelineLayout::COMPUTE_PIP_LAYOUT,
                                    shaderFileInfo);
+
+  // Create a fence
+  VkFenceCreateInfo fenceInfo{};
+  fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
+  VkFence fence;
+  vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &fence);
+
+  // Initialize commands
+  vinkan::CommandCoordinator<MyAppCommandBuffer, MyAppCommandPool,
+                             MyAppSingleUseCommandPool>
+      coordinator(device->getHandle());
+  // Create a single use pool
+  coordinator.createCommandPool(
+      MyAppSingleUseCommandPool::SINGLE_USE_POOL,
+      device->getQueueFamilyIndex(MyAppQueue::COMPUTE_QUEUE));
+
+  // Create a single command in this pool
+  coordinator.createSingleUseCommand(
+      MyAppCommandBuffer::COMPUTE_CMD,
+      MyAppSingleUseCommandPool::SINGLE_USE_POOL);
+
+  // Begin and record command
+  coordinator.beginCommandBuffer(MyAppCommandBuffer::COMPUTE_CMD);
+  VkCommandBuffer cmdBuffer = coordinator.get(MyAppCommandBuffer::COMPUTE_CMD);
+  pipelines_.bindCmdBuffer(cmdBuffer, MyAppPipeline::COMPUTE_PIPELINE);
+  VkDescriptorSet descSet =
+      resources.get(MyAppDescriptorSet::SIMPLE_DESCRIPTOR_SET);
+  vkCmdBindDescriptorSets(
+      cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+      pipelines_.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT), 0, 1, &descSet,
+      0, nullptr);
+  MyAppPC pushConstants{.value = 20};
+  vkCmdPushConstants(
+      cmdBuffer, pipelines_.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT),
+      VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(MyAppPC), &pushConstants);
+  vkCmdDispatch(cmdBuffer, 1, 1, 1);
+  coordinator.endCommandBuffer(MyAppCommandBuffer::COMPUTE_CMD);
+
+  // Submit the command
+  vinkan::SubmitCommandBufferInfo submitInfo{
+      .signalFence = fence,
+      .queue = device->getQueue(MyAppQueue::COMPUTE_QUEUE, 0)};
+  coordinator.submitCommandBuffer(MyAppCommandBuffer::COMPUTE_CMD, submitInfo);
+
+  // Wait execution
+  vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
+
+  // Read first element
+  buffer.map();
+  buffer.readBuffer(bufferData.data());
+  buffer.unmap();
+  std::cout << "Finished, first element: " << bufferData[0] << std::endl;
+
+  // Cleanup
+  vkDestroyFence(device->getHandle(), fence, nullptr);
 }

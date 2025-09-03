@@ -99,6 +99,17 @@ class Pipelines {
     SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Pipeline created");
   }
 
+  void bindCmdBuffer(VkCommandBuffer commandBuffer, PipelineT pipeline) {
+    assert(pipelines_.contains(pipeline));
+    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+                      pipelines_[pipeline]);
+  }
+
+  VkPipelineLayout get(PipelineLayoutT pipelineLayout) {
+    assert(pipelineLayouts_.contains(pipelineLayout));
+    return pipelineLayouts_[pipelineLayout];
+  }
+
  private:
   VkDevice device_;
 

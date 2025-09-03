@@ -77,7 +77,7 @@ class ResourcesBinder {
     SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Descriptor set created");
   }
 
-  VkDescriptorSet getHandle(SetT setIdentifier) {
+  VkDescriptorSet get(SetT setIdentifier) {
     assert(sets_.contains(setIdentifier));
     return sets_[setIdentifier]->getHandle();
   }

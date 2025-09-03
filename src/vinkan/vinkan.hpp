@@ -2,6 +2,7 @@
 #define VVW_VINKAN_HPP
 
 // Wrappers
+#include "command_coordinator.hpp"
 #include "glfw/glfw_vk_surface.hpp"
 #include "pipelines/pipelines.hpp"
 #include "resources/resources.hpp"
