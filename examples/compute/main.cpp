@@ -135,7 +135,7 @@ int main() {
   // Create a pipeline with this layout
   vinkan::ShaderFileInfo shaderFileInfo{
       .shaderFilepath =
-          std::string(COMPILED_SHADERS_DIR) + "/addition_shader.comp.spv",
+          std::string(COMPILED_SHADERS_DIR) + "/addition_shader.spv",
       .shaderStage = VK_SHADER_STAGE_COMPUTE_BIT};
   pipelines_.createComputePipeline(MyAppPipeline::COMPUTE_PIPELINE,
                                    MyAppPipelineLayout::COMPUTE_PIP_LAYOUT,
