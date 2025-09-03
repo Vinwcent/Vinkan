@@ -7,13 +7,10 @@
 #include "vinkan/generics/concepts.hpp"
 #include "vinkan/logging/logger.hpp"
 #include "vinkan/pipelines/shader_module_maker.hpp"
+#include "vinkan/structs/pipeline_info.hpp"
 #include "vulkan/vulkan_core.h"
 
 namespace vinkan {
-
-template <typename T>
-concept ValidShaderInfo =
-    std::is_same_v<T, ShaderFileInfo> || std::is_same_v<T, ShaderRawInfo>;
 
 template <EnumType PipelineT, EnumType PipelineLayoutT>
 class Pipelines {
@@ -70,14 +67,14 @@ class Pipelines {
   }
 
   template <ValidShaderInfo ShaderInfoT>
-  void createComputePipeline(PipelineT pipelineIdentifier,
-                             PipelineLayoutT pipelineLayoutIdentifier,
-                             ShaderInfoT shaderInfo) {
-    assert(pipelineLayouts_.contains(pipelineLayoutIdentifier));
-    auto pipelineLayout = pipelineLayouts_[pipelineLayoutIdentifier];
+  void createComputePipeline(
+      PipelineT pipelineIdentifier,
+      ComputePipelineInfo<PipelineLayoutT, ShaderInfoT> pipelineInfo) {
+    assert(pipelineLayouts_.contains(pipelineInfo.layoutIdentifier));
+    auto pipelineLayout = pipelineLayouts_[pipelineInfo.layoutIdentifier];
 
     ShaderModuleMaker moduleMaker(device_);
-    auto vkShaderStages = moduleMaker(shaderInfo);
+    auto vkShaderStages = moduleMaker(pipelineInfo.shaderInfo);
 
     VkComputePipelineCreateInfo computePipelineCreateInfo{};
     computePipelineCreateInfo.sType =

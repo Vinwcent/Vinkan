@@ -41,4 +41,5 @@
 *.dwo
 
 build/
-build/
+notes
+.cache/

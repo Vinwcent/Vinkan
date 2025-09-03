@@ -137,9 +137,13 @@ int main() {
       .shaderFilepath =
           std::string(COMPILED_SHADERS_DIR) + "/addition_shader.spv",
       .shaderStage = VK_SHADER_STAGE_COMPUTE_BIT};
+  vinkan::ComputePipelineInfo<MyAppPipelineLayout, vinkan::ShaderFileInfo>
+      computePipelineInfo{
+          .layoutIdentifier = MyAppPipelineLayout::COMPUTE_PIP_LAYOUT,
+          .shaderInfo = shaderFileInfo,
+      };
   pipelines_.createComputePipeline(MyAppPipeline::COMPUTE_PIPELINE,
-                                   MyAppPipelineLayout::COMPUTE_PIP_LAYOUT,
-                                   shaderFileInfo);
+                                   computePipelineInfo);
 
   // Create a fence
   VkFenceCreateInfo fenceInfo{};
