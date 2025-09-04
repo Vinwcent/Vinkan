@@ -6,7 +6,8 @@
 #include "vinkan/logging/logger.hpp"
 
 namespace vinkan {
-Swapchain::Swapchain(SwapchainInfo swapchainInfo) {
+Swapchain::Swapchain(SwapchainInfo swapchainInfo)
+    : swapchainInfo_(swapchainInfo) {
   assert(swapchainInfo.surfaceSupportDetails
              .findBestFormat({swapchainInfo.surfaceFormat})
              .has_value() &&
@@ -58,9 +59,45 @@ Swapchain::Swapchain(SwapchainInfo swapchainInfo) {
 }
 
 Swapchain::~Swapchain() {
+  for (auto imageView : imageViews_) {
+    vkDestroyImageView(device_, imageView, nullptr);
+  }
+
   if (isHandleValid()) {
     vkDestroySwapchainKHR(device_, handle_, nullptr);
   }
+}
+SwapchainInfo Swapchain::getSwapchainInfo() { return swapchainInfo_; }
+
+std::vector<VkImageView> Swapchain::getImageViews() {
+  if (imageViews_.size() > 0) {
+    return imageViews_;
+  }
+  std::vector<VkImage> images = {};
+  uint32_t realImageCount;
+  vkGetSwapchainImagesKHR(device_, handle_, &realImageCount, nullptr);
+  images.resize(realImageCount);
+  vkGetSwapchainImagesKHR(device_, handle_, &realImageCount, images.data());
+
+  imageViews_.resize(images.size());
+  for (size_t i = 0; i < imageViews_.size(); i++) {
+    VkImageViewCreateInfo viewInfo{};
+    viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
+    viewInfo.image = images[i];
+    viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
+    viewInfo.format = swapchainInfo_.surfaceFormat.format;
+    viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
+    viewInfo.subresourceRange.baseMipLevel = 0;
+    viewInfo.subresourceRange.levelCount = 1;
+    viewInfo.subresourceRange.baseArrayLayer = 0;
+    viewInfo.subresourceRange.layerCount = 1;
+
+    if (vkCreateImageView(device_, &viewInfo, nullptr, &imageViews_[i]) !=
+        VK_SUCCESS) {
+      throw std::runtime_error("failed to create texture image view!");
+    }
+  }
+  return imageViews_;
 }
 
 std::optional<uint32_t> Swapchain::acquireNextImageIndex(

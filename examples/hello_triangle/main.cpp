@@ -275,4 +275,11 @@ int main() {
 
   pipelines_.createGraphicsPipeline(MyAppPipeline::GRAPHICS_PIPELINE,
                                     gfxPipelineInfo);
+
+  vinkan::RenderStage::Builder<MyAppAttachment> builder(
+      *renderPass, device->getHandle(), imageCount);
+  builder.defineAttachment(MyAppAttachment::SWAPCHAIN_ATTACHMENT,
+                           swapchain.getImageViews());
+  std::unique_ptr<vinkan::RenderStage> renderStage =
+      builder.build(swapchain.getSwapchainInfo().imageExtent);
 }

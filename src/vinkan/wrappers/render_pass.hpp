@@ -28,6 +28,10 @@ class RenderPass : public PtrHandleWrapper<VkRenderPass> {
     }
   }
 
+  std::map<T, uint32_t> getAttachmentIndices() const {
+    return attachmentIndices_;
+  }
+
  private:
   RenderPass(VkDevice device, VkRenderPass renderPass,
              std::map<T, uint32_t> attachmentIndices)
