@@ -19,7 +19,7 @@ enum class MyAppPipelineLayout { GRAPHICS_PIP_LAYOUT };
 enum class MyAppAttachment { SWAPCHAIN_ATTACHMENT };
 
 // Command buffers
-enum class MyAppCommandBuffer { GRAPHICS_CMD_1, GRAPHICS_CMD_2 };
+enum class MyAppCommandBuffer { GRAPHICS_CMD_1, GRAPHICS_CMD_2, TRANSFER_CMD };
 enum class MyAppCommandPool { GRAPHICS_POOL };
 enum class MyAppFence { GRAPHICS_FENCE };
 enum class MyAppSemaphore { IMG_AVAILABLE, DRAW_FINISH };
@@ -149,7 +149,8 @@ int main() {
           .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
           .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
           .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
-      });
+      },
+      VK_IMAGE_LAYOUT_GENERAL);
 
   vinkan::SubpassInfo<MyAppAttachment> subpassInfo{
       .colorAttachments = {MyAppAttachment::SWAPCHAIN_ATTACHMENT},
@@ -297,6 +298,27 @@ int main() {
                                      MyAppCommandPool::GRAPHICS_POOL);
   coordinator.createLongLivedCommand(MyAppCommandBuffer::GRAPHICS_CMD_2,
                                      MyAppCommandPool::GRAPHICS_POOL);
+  coordinator.createLongLivedCommand(MyAppCommandBuffer::TRANSFER_CMD,
+                                     MyAppCommandPool::GRAPHICS_POOL);
+
+  // Create triangle model
+  std::vector<Vertex> triangleVertices = {
+      {{0.0f, -0.5f, 0.0f}},  // Bottom
+      {{0.5f, 0.5f, 0.0f}},   // Top right
+      {{-0.5f, 0.5f, 0.0f}}   // Top left
+  };
+
+  vinkan::ModelData<Vertex> triangleData{triangleVertices, {}};
+  vinkan::Model<Vertex> triangle(
+      device->getHandle(), physicalDevice.getMemoryProperties(), triangleData);
+
+  // Setup transfer for triangle
+  coordinator.resetCommandBuffer(MyAppCommandBuffer::TRANSFER_CMD);
+  VkCommandBuffer transferCmd =
+      coordinator.get(MyAppCommandBuffer::TRANSFER_CMD);
+  VkQueue transferQueue =
+      device->getQueue(MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE, 0);
+  triangle.transferModelToDevice(transferCmd, triangleData, transferQueue);
 
   while (!glfwWindowShouldClose(window)) {
     glfwPollEvents();
@@ -328,6 +350,8 @@ int main() {
 
     // Bind pipeline
     pipelines_.bindCmdBuffer(cmdBuffer, MyAppPipeline::GRAPHICS_PIPELINE);
+    // Draw triangle
+    triangle.draw(cmdBuffer);
 
     // End render pass
     vkCmdEndRenderPass(cmdBuffer);

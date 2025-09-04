@@ -4,6 +4,7 @@
 // Wrappers
 #include "command_coordinator.hpp"
 #include "glfw/glfw_vk_surface.hpp"
+#include "models/model.hpp"
 #include "pipelines/pipelines.hpp"
 #include "render/render_stage.hpp"
 #include "resources/resources.hpp"

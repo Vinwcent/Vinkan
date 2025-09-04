@@ -55,7 +55,7 @@ class CommandCoordinator {
       singleUsePools_.insert(commandPoolIdentifier);
     }
     commandPools_[commandPoolIdentifier] = pool;
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Command pool created");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command pool created");
   }
   void resetCommandBuffer(CommandT commandIdentifier) {
     assert(commandBuffers_.contains(commandIdentifier));
@@ -64,7 +64,7 @@ class CommandCoordinator {
         VK_SUCCESS) {
       throw std::runtime_error("Failed to reset command buffer");
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Command buffer reset");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer reset");
   }
 
   void createLongLivedCommand(std::vector<CommandT> commandIdentifiers,
@@ -89,8 +89,8 @@ class CommandCoordinator {
       commandBuffers_[commandIdentifiers[i]] = commandBuffers[i];
       commandToPool_[commandIdentifiers[i]] = commandPool;
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(),
-                       "Long lived command buffers created");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(),
+                        "Long lived command buffers created");
   }
 
   void createLongLivedCommand(CommandT commandIdentifier,
@@ -99,16 +99,7 @@ class CommandCoordinator {
                            commandPoolIdentifier);
   }
 
-  void createSingleUseCommand(CommandT commandIdentifier,
-                              CommandPoolT commandPoolIdentifier) {
-    createSingleUseCommand(std::vector<CommandT>{commandIdentifier},
-                           commandPoolIdentifier);
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(),
-                       "Single use command buffer created");
-  }
-
-  void createSingleUseCommand(std::vector<CommandT> commandIdentifiers,
-                              CommandPoolT commandPoolIdentifier) {
+  VkCommandBuffer createSingleUseCommand(CommandPoolT commandPoolIdentifier) {
     assert(commandPools_.contains(commandPoolIdentifier));
     assert(singleUsePools_.contains(commandPoolIdentifier));
     auto commandPool = commandPools_[commandPoolIdentifier];
@@ -117,21 +108,17 @@ class CommandCoordinator {
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
     allocInfo.commandPool = commandPool;
     allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount =
-        static_cast<uint32_t>(commandIdentifiers.size());
+    allocInfo.commandBufferCount = 1;
 
-    std::vector<VkCommandBuffer> commandBuffers(commandIdentifiers.size());
-    if (vkAllocateCommandBuffers(device_, &allocInfo, commandBuffers.data()) !=
+    VkCommandBuffer commandBuffer;
+    if (vkAllocateCommandBuffers(device_, &allocInfo, &commandBuffer) !=
         VK_SUCCESS) {
-      throw std::runtime_error("Failed to allocate single use command buffers");
+      throw std::runtime_error("Failed to allocate single use command buffer");
     }
 
-    for (size_t i = 0; i < commandIdentifiers.size(); ++i) {
-      commandBuffers_[commandIdentifiers[i]] = commandBuffers[i];
-      commandToPool_[commandIdentifiers[i]] = commandPool;
-    }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(),
-                       "Single use command buffers created");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(),
+                        "Single use command buffer created");
+    return commandBuffer;
   }
 
   void freeCommandBuffer(std::vector<CommandT> commandIdentifiers) {
@@ -146,11 +133,20 @@ class CommandCoordinator {
       commandBuffers_.erase(commandIdentifier);
       commandToPool_.erase(commandIdentifier);
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Command buffers freed");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffers freed");
   }
 
   void freeCommandBuffer(CommandT commandIdentifier) {
     freeCommandBuffer(std::vector<CommandT>{commandIdentifier});
+  }
+
+  void freeCommandBuffer(CommandPoolT commandPoolIdentifier,
+                         VkCommandBuffer commandBuffer) {
+    assert(commandPools_.contains(commandPoolIdentifier));
+    auto commandPool = commandPools_[commandPoolIdentifier];
+
+    vkFreeCommandBuffers(device_, commandPool, 1, &commandBuffer);
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer freed");
   }
 
   void beginCommandBuffer(std::vector<CommandT> commandIdentifiers) {
@@ -167,7 +163,7 @@ class CommandCoordinator {
         throw std::runtime_error("Failed to begin recording command buffer");
       }
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Command buffer recording begun");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer recording begun");
   }
 
   void beginCommandBuffer(CommandT commandIdentifier) {
@@ -183,7 +179,7 @@ class CommandCoordinator {
         throw std::runtime_error("Failed to record command buffer");
       }
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Command buffer recording ended");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer recording ended");
   }
 
   void endCommandBuffer(CommandT commandIdentifier) {
@@ -220,7 +216,7 @@ class CommandCoordinator {
                       submitBufferInfo.signalFence) != VK_SUCCESS) {
       throw std::runtime_error("Failed to submit command buffer");
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Command buffer submitted");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer submitted");
   }
 
   void submitCommandBuffer(CommandT commandIdentifier,

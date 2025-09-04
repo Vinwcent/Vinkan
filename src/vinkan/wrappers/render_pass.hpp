@@ -69,14 +69,13 @@ template <typename T>
 class RenderPass<T>::Builder {
  public:
   void addAttachment(T attachmentType,
-                     VkAttachmentDescription attachmentDescription) {
+                     VkAttachmentDescription attachmentDescription,
+                     VkImageLayout attachmentReferenceLayout) {
     assert(!attachmentIndices.contains(attachmentType));
     uint32_t attachmentIndex = attachments_.size();
     attachments_.push_back(attachmentDescription);
-    // TODO: Enable different layout at the subpass addition step
-    attachmentRefs_.push_back(
-        VkAttachmentReference{.attachment = attachmentIndex,
-                              .layout = attachmentDescription.finalLayout});
+    attachmentRefs_.push_back(VkAttachmentReference{
+        .attachment = attachmentIndex, .layout = attachmentReferenceLayout});
     attachmentIndices[attachmentType] = attachmentIndex;
   }
   void addSubpass(SubpassInfo<T> subpassInfo) {
