@@ -39,6 +39,7 @@ class CommandCoordinator {
 
   void createCommandPool(CommandPoolT commandPoolIdentifier,
                          uint32_t queueFamilyIndex, bool singleUsagePool) {
+    assert(!commandPools_.contains(commandPoolIdentifier));
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
     poolInfo.flags = singleUsagePool
@@ -46,15 +47,24 @@ class CommandCoordinator {
                          : VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = queueFamilyIndex;
 
-    if (vkCreateCommandPool(device_, &poolInfo, nullptr,
-                            &commandPools_[commandPoolIdentifier]) !=
-        VK_SUCCESS) {
+    VkCommandPool pool;
+    if (vkCreateCommandPool(device_, &poolInfo, nullptr, &pool) != VK_SUCCESS) {
       throw std::runtime_error("Failed to create command pool");
     }
     if (singleUsagePool) {
       singleUsePools_.insert(commandPoolIdentifier);
     }
+    commandPools_[commandPoolIdentifier] = pool;
     SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Command pool created");
+  }
+  void resetCommandBuffer(CommandT commandIdentifier) {
+    assert(commandBuffers_.contains(commandIdentifier));
+
+    if (vkResetCommandBuffer(commandBuffers_[commandIdentifier], 0) !=
+        VK_SUCCESS) {
+      throw std::runtime_error("Failed to reset command buffer");
+    }
+    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Command buffer reset");
   }
 
   void createLongLivedCommand(std::vector<CommandT> commandIdentifiers,

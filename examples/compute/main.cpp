@@ -148,7 +148,7 @@ int main() {
   // Create a fence
   vinkan::SyncMechanisms<MyAppFence, MyAppSemaphore> syncMechanisms(
       device->getHandle());
-  syncMechanisms.createShortTermFence(MyAppFence::COMPUTE_FENCE);
+  syncMechanisms.createFence(MyAppFence::COMPUTE_FENCE);
   auto fence = syncMechanisms.getFence(MyAppFence::COMPUTE_FENCE);
 
   // Initialize commands

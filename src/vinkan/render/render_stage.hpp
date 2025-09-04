@@ -1,6 +1,5 @@
 #ifndef VINKAN_RENDER_STAGE_HPP
 #define VINKAN_RENDER_STAGE_HPP
-#include <iostream>
 
 #include "vinkan/generics/concepts.hpp"
 #include "vinkan/wrappers/render_pass.hpp"
@@ -112,7 +111,6 @@ class RenderStage::Builder {
       framebufferInfo.renderPass = renderPass_.getHandle();
       framebufferInfo.attachmentCount =
           static_cast<uint32_t>(attachments.size());
-      std::cout << "SIZE IS " << attachments.size() << "\n";
       framebufferInfo.pAttachments = attachments.data();
       framebufferInfo.width = imageExtent.width;
       framebufferInfo.height = imageExtent.height;

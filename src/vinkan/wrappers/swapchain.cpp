@@ -69,6 +69,24 @@ Swapchain::~Swapchain() {
 }
 SwapchainInfo Swapchain::getSwapchainInfo() { return swapchainInfo_; }
 
+void Swapchain::present(uint32_t imageIndex, VkQueue presentQueue,
+                        VkSemaphore semaphoreToWait) {
+  VkPresentInfoKHR presentInfo = {};
+  presentInfo.sType = VK_STRUCTURE_TYPE_PRESENT_INFO_KHR;
+
+  presentInfo.waitSemaphoreCount = 1;
+  presentInfo.pWaitSemaphores = &semaphoreToWait;
+
+  VkSwapchainKHR swapChains[] = {handle_};
+  presentInfo.swapchainCount = 1;
+  presentInfo.pSwapchains = swapChains;
+
+  auto uImageIndex = static_cast<uint32_t>(imageIndex);
+  presentInfo.pImageIndices = &uImageIndex;
+
+  vkQueuePresentKHR(presentQueue, &presentInfo);
+}
+
 std::vector<VkImageView> Swapchain::getImageViews() {
   if (imageViews_.size() > 0) {
     return imageViews_;

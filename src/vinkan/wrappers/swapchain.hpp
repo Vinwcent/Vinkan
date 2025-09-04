@@ -33,6 +33,9 @@ class Swapchain : public PtrHandleWrapper<VkSwapchainKHR> {
   std::optional<uint32_t> acquireNextImageIndex(
       VkSemaphore semaphoreToSignal, VkFence fenceToSignal = VK_NULL_HANDLE);
 
+  void present(uint32_t imageIndex, VkQueue presentQueue,
+               VkSemaphore semaphoreToWait);
+
  private:
   std::vector<VkImageView> imageViews_{};
   VkDevice device_ = nullptr;

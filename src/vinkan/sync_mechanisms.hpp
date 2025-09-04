@@ -4,7 +4,6 @@
 #include <vulkan/vulkan.h>
 
 #include <map>
-#include <set>
 #include <vector>
 
 #include "vinkan/generics/concepts.hpp"
@@ -39,8 +38,9 @@ class SyncMechanisms {
   SyncMechanisms(const SyncMechanisms&) = delete;
   SyncMechanisms& operator=(const SyncMechanisms&) = delete;
 
-  void createLongLivedFence(std::vector<FenceT> fenceIdentifiers,
-                            bool signaled = false) {
+  // Fence
+  void createFence(std::vector<FenceT> fenceIdentifiers,
+                   bool signaled = false) {
     VkFenceCreateInfo fenceInfo{};
     fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
     fenceInfo.flags = signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
@@ -51,38 +51,16 @@ class SyncMechanisms {
         throw std::runtime_error("Failed to create fence");
       }
       fences_[fenceIdentifier] = fence;
-      longLivedFences_.insert(fenceIdentifier);
     }
     SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Long lived fences created");
   }
 
-  void createLongLivedFence(FenceT fenceIdentifier, bool signaled = false) {
-    createLongLivedFence(std::vector<FenceT>{fenceIdentifier}, signaled);
+  void createFence(FenceT fenceIdentifier, bool signaled = false) {
+    createFence(std::vector<FenceT>{fenceIdentifier}, signaled);
   }
 
-  void createShortTermFence(std::vector<FenceT> fenceIdentifiers,
-                            bool signaled = false) {
-    VkFenceCreateInfo fenceInfo{};
-    fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-    fenceInfo.flags = signaled ? VK_FENCE_CREATE_SIGNALED_BIT : 0;
-
-    for (auto fenceIdentifier : fenceIdentifiers) {
-      VkFence fence;
-      if (vkCreateFence(device_, &fenceInfo, nullptr, &fence) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to create short term fence");
-      }
-      fences_[fenceIdentifier] = fence;
-      shortTermFences_.insert(fenceIdentifier);
-    }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Short term fences created");
-  }
-
-  void createShortTermFence(FenceT fenceIdentifier, bool signaled = false) {
-    createShortTermFence(std::vector<FenceT>{fenceIdentifier}, signaled);
-  }
-
-  // Long-lived semaphore creation
-  void createLongLivedSemaphore(std::vector<SemT> semaphoreIdentifiers) {
+  // Semaphore
+  void createSemaphore(std::vector<SemT> semaphoreIdentifiers) {
     VkSemaphoreCreateInfo semaphoreInfo{};
     semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
 
@@ -93,34 +71,12 @@ class SyncMechanisms {
         throw std::runtime_error("Failed to create semaphore");
       }
       semaphores_[semaphoreIdentifier] = semaphore;
-      longLivedSemaphores_.insert(semaphoreIdentifier);
     }
     SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Long lived semaphores created");
   }
 
-  void createLongLivedSemaphore(SemT semaphoreIdentifier) {
-    createLongLivedSemaphore(std::vector<SemT>{semaphoreIdentifier});
-  }
-
-  // Short-term semaphore creation
-  void createShortTermSemaphore(std::vector<SemT> semaphoreIdentifiers) {
-    VkSemaphoreCreateInfo semaphoreInfo{};
-    semaphoreInfo.sType = VK_STRUCTURE_TYPE_SEMAPHORE_CREATE_INFO;
-
-    for (auto semaphoreIdentifier : semaphoreIdentifiers) {
-      VkSemaphore semaphore;
-      if (vkCreateSemaphore(device_, &semaphoreInfo, nullptr, &semaphore) !=
-          VK_SUCCESS) {
-        throw std::runtime_error("Failed to create short term semaphore");
-      }
-      semaphores_[semaphoreIdentifier] = semaphore;
-      shortTermSemaphores_.insert(semaphoreIdentifier);
-    }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Short term semaphores created");
-  }
-
-  void createShortTermSemaphore(SemT semaphoreIdentifier) {
-    createShortTermSemaphore(std::vector<SemT>{semaphoreIdentifier});
+  void createSemaphore(SemT semaphoreIdentifier) {
+    createSemaphore(std::vector<SemT>{semaphoreIdentifier});
   }
 
   // Free fences
@@ -130,9 +86,6 @@ class SyncMechanisms {
 
       vkDestroyFence(device_, fences_[fenceIdentifier], nullptr);
       fences_.erase(fenceIdentifier);
-
-      longLivedFences_.erase(fenceIdentifier);
-      shortTermFences_.erase(fenceIdentifier);
     }
     SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Fences freed");
   }
@@ -147,9 +100,6 @@ class SyncMechanisms {
 
       vkDestroySemaphore(device_, semaphores_[semaphoreIdentifier], nullptr);
       semaphores_.erase(semaphoreIdentifier);
-
-      longLivedSemaphores_.erase(semaphoreIdentifier);
-      shortTermSemaphores_.erase(semaphoreIdentifier);
     }
     SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Semaphores freed");
   }
@@ -160,12 +110,6 @@ class SyncMechanisms {
 
  private:
   VkDevice device_;
-
-  std::set<FenceT> longLivedFences_;
-  std::set<FenceT> shortTermFences_;
-  std::set<SemT> longLivedSemaphores_;
-  std::set<SemT> shortTermSemaphores_;
-
   std::map<FenceT, VkFence> fences_;
   std::map<SemT, VkSemaphore> semaphores_;
 };

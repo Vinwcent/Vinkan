@@ -9,13 +9,7 @@ const std::vector<const char *> MyAppValidationLayers = {
     "VK_LAYER_KHRONOS_validation"};
 
 // Queue
-enum class MyAppQueue { GRAPHICS_QUEUE };
-
-// Resources
-enum class MyAppDescriptorSet { SIMPLE_DESCRIPTOR_SET };
-enum class MyAppDescriptorSetLayout { SIMPLE_DESCRIPTOR_SET_LAYOUT };
-enum class MyAppDescriptorPool { SIMPLE_DESCRIPTOR_POOL };
-enum class MyAppBuffers { SIMPLE_BUFFER };
+enum class MyAppQueue { GRAPHICS_AND_PRESENT_QUEUE };
 
 // Pipeline
 enum class MyAppPipeline { GRAPHICS_PIPELINE };
@@ -25,10 +19,10 @@ enum class MyAppPipelineLayout { GRAPHICS_PIP_LAYOUT };
 enum class MyAppAttachment { SWAPCHAIN_ATTACHMENT };
 
 // Command buffers
-enum class MyAppCommandBuffer { GRAPHICS_CMD };
+enum class MyAppCommandBuffer { GRAPHICS_CMD_1, GRAPHICS_CMD_2 };
 enum class MyAppCommandPool { GRAPHICS_POOL };
-enum class MyAppSingleUseCommandPool { SINGLE_USE_POOL };
 enum class MyAppFence { GRAPHICS_FENCE };
+enum class MyAppSemaphore { IMG_AVAILABLE, DRAW_FINISH };
 
 // Push constants
 struct MyAppPC {
@@ -54,10 +48,6 @@ struct Vertex {
         .offset = offsetof(Vertex, position)}};
   }
 };
-
-using MyAppResources =
-    vinkan::Resources<MyAppBuffers, MyAppDescriptorSet,
-                      MyAppDescriptorSetLayout, MyAppDescriptorPool>;
 
 int main() {
   // Create the window (with glfw)
@@ -111,7 +101,7 @@ int main() {
                                                     physicalDevice.getQueues());
   deviceBuilder.addExtensions(DEVICE_EXTENSIONS);
   vinkan::QueueFamilyRequest<MyAppQueue> queueRequest{
-      .queueFamilyIdentifier = MyAppQueue::GRAPHICS_QUEUE,
+      .queueFamilyIdentifier = MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE,
       .flagsRequested = VK_QUEUE_GRAPHICS_BIT,
       .surfacePresentationSupport = surface.getHandle(),
       .nQueues = 1,
@@ -135,7 +125,7 @@ int main() {
        .colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR}};
   auto surfaceFormat = surfaceDetails.findBestFormat(wantedFormats);
   assert(surfaceFormat.has_value());
-  auto imageCount = std::min(3u, surfaceDetails.capabilities.maxImageCount);
+  auto imageCount = std::min(2u, surfaceDetails.capabilities.maxImageCount);
 
   vinkan::SwapchainInfo swapchainInfo{
       .device = device->getHandle(),
@@ -158,7 +148,7 @@ int main() {
           .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
           .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
           .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-          .finalLayout = VK_IMAGE_LAYOUT_GENERAL,
+          .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
       });
 
   vinkan::SubpassInfo<MyAppAttachment> subpassInfo{
@@ -282,4 +272,83 @@ int main() {
                            swapchain.getImageViews());
   std::unique_ptr<vinkan::RenderStage> renderStage =
       builder.build(swapchain.getSwapchainInfo().imageExtent);
+
+  vinkan::SyncMechanisms<MyAppFence, MyAppSemaphore> syncMechanisms(
+      device->getHandle());
+  syncMechanisms.createFence(MyAppFence::GRAPHICS_FENCE, true);
+  syncMechanisms.createSemaphore(MyAppSemaphore::IMG_AVAILABLE);
+  syncMechanisms.createSemaphore(MyAppSemaphore::DRAW_FINISH);
+  VkFence gfxFence = syncMechanisms.getFence(MyAppFence::GRAPHICS_FENCE);
+  VkSemaphore imgAvailableS =
+      syncMechanisms.getSemaphore(MyAppSemaphore::IMG_AVAILABLE);
+  VkSemaphore drawFinish =
+      syncMechanisms.getSemaphore(MyAppSemaphore::DRAW_FINISH);
+
+  // Initialize commands
+  vinkan::CommandCoordinator<MyAppCommandBuffer, MyAppCommandPool> coordinator(
+      device->getHandle());
+  // Create command pool
+  coordinator.createCommandPool(
+      MyAppCommandPool::GRAPHICS_POOL,
+      device->getQueueFamilyIndex(MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE),
+      false);
+  // Create 2 commands
+  coordinator.createLongLivedCommand(MyAppCommandBuffer::GRAPHICS_CMD_1,
+                                     MyAppCommandPool::GRAPHICS_POOL);
+  coordinator.createLongLivedCommand(MyAppCommandBuffer::GRAPHICS_CMD_2,
+                                     MyAppCommandPool::GRAPHICS_POOL);
+
+  while (!glfwWindowShouldClose(window)) {
+    glfwPollEvents();
+
+    // Wait for previous frame
+    vkWaitForFences(device->getHandle(), 1, &gfxFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(device->getHandle(), 1, &gfxFence);
+
+    // Acquire next image
+    auto imageNumberOpt =
+        swapchain.acquireNextImageIndex(imgAvailableS, VK_NULL_HANDLE);
+    if (!imageNumberOpt.has_value()) {
+      throw std::runtime_error("No support for resizing");
+    }
+    auto imageNumber = imageNumberOpt.value();
+
+    // Select command buffer (alternate between the two)
+    MyAppCommandBuffer currentCmd = (imageNumber % 2 == 0)
+                                        ? MyAppCommandBuffer::GRAPHICS_CMD_1
+                                        : MyAppCommandBuffer::GRAPHICS_CMD_2;
+
+    // Record command buffer
+    coordinator.resetCommandBuffer(currentCmd);
+    coordinator.beginCommandBuffer(currentCmd);
+    VkCommandBuffer cmdBuffer = coordinator.get(currentCmd);
+
+    // Begin render pass
+    renderStage->beginRenderPass(cmdBuffer, imageNumber);
+
+    // Bind pipeline
+    pipelines_.bindCmdBuffer(cmdBuffer, MyAppPipeline::GRAPHICS_PIPELINE);
+
+    // End render pass
+    vkCmdEndRenderPass(cmdBuffer);
+    coordinator.endCommandBuffer(currentCmd);
+
+    // Submit
+    VkQueue queue = device->getQueue(MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE, 0);
+    vinkan::SubmitCommandBufferInfo submitInfo{
+        .waitSemaphores = {imgAvailableS},
+        .signalSemaphores = {drawFinish},
+        .signalFence = gfxFence,
+        .queue = device->getQueue(MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE, 0)};
+    coordinator.submitCommandBuffer(currentCmd, submitInfo);
+
+    // Present
+    swapchain.present(imageNumber, queue, drawFinish);
+  }
+
+  vkDeviceWaitIdle(device->getHandle());
+  glfwDestroyWindow(window);
+  glfwTerminate();
+
+  return 0;
 }
