@@ -6,6 +6,7 @@
 #include "glfw/glfw_vk_surface.hpp"
 #include "pipelines/pipelines.hpp"
 #include "resources/resources.hpp"
+#include "sync_mechanisms.hpp"
 #include "wrappers/buffer.hpp"
 #include "wrappers/device.hpp"
 #include "wrappers/instance.hpp"

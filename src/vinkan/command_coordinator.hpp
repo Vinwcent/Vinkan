@@ -4,6 +4,7 @@
 #include <vulkan/vulkan.h>
 
 #include <map>
+#include <set>
 #include <vector>
 
 #include "vinkan/generics/concepts.hpp"
@@ -18,8 +19,7 @@ struct SubmitCommandBufferInfo {
   VkQueue queue;
 };
 
-template <EnumType CommandT, EnumType CommandPoolT,
-          EnumType SingleUseCommandPoolT>
+template <EnumType CommandT, EnumType CommandPoolT>
 class CommandCoordinator {
  public:
   VkCommandBuffer get(CommandT commandIdentifier) {
@@ -32,19 +32,18 @@ class CommandCoordinator {
     for (auto& [identifier, pool] : commandPools_) {
       vkDestroyCommandPool(device_, pool, nullptr);
     }
-    for (auto& [identifier, pool] : singleUseCommandPools_) {
-      vkDestroyCommandPool(device_, pool, nullptr);
-    }
   }
 
   CommandCoordinator(const CommandCoordinator&) = delete;
   CommandCoordinator& operator=(const CommandCoordinator&) = delete;
 
   void createCommandPool(CommandPoolT commandPoolIdentifier,
-                         uint32_t queueFamilyIndex) {
+                         uint32_t queueFamilyIndex, bool singleUsagePool) {
     VkCommandPoolCreateInfo poolInfo{};
     poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
+    poolInfo.flags = singleUsagePool
+                         ? VK_COMMAND_POOL_CREATE_TRANSIENT_BIT
+                         : VK_COMMAND_POOL_CREATE_RESET_COMMAND_BUFFER_BIT;
     poolInfo.queueFamilyIndex = queueFamilyIndex;
 
     if (vkCreateCommandPool(device_, &poolInfo, nullptr,
@@ -52,22 +51,10 @@ class CommandCoordinator {
         VK_SUCCESS) {
       throw std::runtime_error("Failed to create command pool");
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Command pool created");
-  }
-
-  void createCommandPool(SingleUseCommandPoolT commandPoolIdentifier,
-                         uint32_t queueFamilyIndex) {
-    VkCommandPoolCreateInfo poolInfo{};
-    poolInfo.sType = VK_STRUCTURE_TYPE_COMMAND_POOL_CREATE_INFO;
-    poolInfo.flags = VK_COMMAND_POOL_CREATE_TRANSIENT_BIT;
-    poolInfo.queueFamilyIndex = queueFamilyIndex;
-
-    if (vkCreateCommandPool(device_, &poolInfo, nullptr,
-                            &singleUseCommandPools_[commandPoolIdentifier]) !=
-        VK_SUCCESS) {
-      throw std::runtime_error("Failed to create single use command pool");
+    if (singleUsagePool) {
+      singleUsePools_.insert(commandPoolIdentifier);
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Single use command pool created");
+    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Command pool created");
   }
 
   void createLongLivedCommand(std::vector<CommandT> commandIdentifiers,
@@ -103,31 +90,18 @@ class CommandCoordinator {
   }
 
   void createSingleUseCommand(CommandT commandIdentifier,
-                              SingleUseCommandPoolT commandPoolIdentifier) {
-    assert(singleUseCommandPools_.contains(commandPoolIdentifier));
-    auto commandPool = singleUseCommandPools_[commandPoolIdentifier];
-
-    VkCommandBufferAllocateInfo allocInfo{};
-    allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
-    allocInfo.commandPool = commandPool;
-    allocInfo.level = VK_COMMAND_BUFFER_LEVEL_PRIMARY;
-    allocInfo.commandBufferCount = 1;
-
-    VkCommandBuffer commandBuffer;
-    if (vkAllocateCommandBuffers(device_, &allocInfo, &commandBuffer) !=
-        VK_SUCCESS) {
-      throw std::runtime_error("Failed to allocate single use command buffer");
-    }
-    commandBuffers_[commandIdentifier] = commandBuffer;
-    commandToPool_[commandIdentifier] = commandPool;
+                              CommandPoolT commandPoolIdentifier) {
+    createSingleUseCommand(std::vector<CommandT>{commandIdentifier},
+                           commandPoolIdentifier);
     SPDLOG_LOGGER_INFO(get_vinkan_logger(),
                        "Single use command buffer created");
   }
 
   void createSingleUseCommand(std::vector<CommandT> commandIdentifiers,
-                              SingleUseCommandPoolT commandPoolIdentifier) {
-    assert(singleUseCommandPools_.contains(commandPoolIdentifier));
-    auto commandPool = singleUseCommandPools_[commandPoolIdentifier];
+                              CommandPoolT commandPoolIdentifier) {
+    assert(commandPools_.contains(commandPoolIdentifier));
+    assert(singleUsePools_.contains(commandPoolIdentifier));
+    auto commandPool = commandPools_[commandPoolIdentifier];
 
     VkCommandBufferAllocateInfo allocInfo{};
     allocInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_ALLOCATE_INFO;
@@ -248,8 +222,8 @@ class CommandCoordinator {
  private:
   VkDevice device_;
 
+  std::set<CommandPoolT> singleUsePools_;
   std::map<CommandPoolT, VkCommandPool> commandPools_;
-  std::map<SingleUseCommandPoolT, VkCommandPool> singleUseCommandPools_;
   std::map<CommandT, VkCommandBuffer> commandBuffers_;
   std::map<CommandT, VkCommandPool> commandToPool_;
 };

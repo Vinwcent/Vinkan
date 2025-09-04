@@ -22,9 +22,9 @@ enum class MyAppPipelineLayout { COMPUTE_PIP_LAYOUT };
 
 // Command buffers
 enum class MyAppCommandBuffer { COMPUTE_CMD };
-enum class MyAppCommandPool { COMPUTE_POOL };
-enum class MyAppSingleUseCommandPool { SINGLE_USE_POOL };
+enum class MyAppCommandPool { SINGLE_USE_COMPUTE_POOL };
 enum class MyAppFence { COMPUTE_FENCE };
+enum class MyAppSemaphore { COMPUTE_SEMAPHORE };
 
 // Push constants
 struct MyAppPC {
@@ -146,24 +146,22 @@ int main() {
                                    computePipelineInfo);
 
   // Create a fence
-  VkFenceCreateInfo fenceInfo{};
-  fenceInfo.sType = VK_STRUCTURE_TYPE_FENCE_CREATE_INFO;
-  VkFence fence;
-  vkCreateFence(device->getHandle(), &fenceInfo, nullptr, &fence);
+  vinkan::SyncMechanisms<MyAppFence, MyAppSemaphore> syncMechanisms(
+      device->getHandle());
+  syncMechanisms.createShortTermFence(MyAppFence::COMPUTE_FENCE);
+  auto fence = syncMechanisms.getFence(MyAppFence::COMPUTE_FENCE);
 
   // Initialize commands
-  vinkan::CommandCoordinator<MyAppCommandBuffer, MyAppCommandPool,
-                             MyAppSingleUseCommandPool>
-      coordinator(device->getHandle());
+  vinkan::CommandCoordinator<MyAppCommandBuffer, MyAppCommandPool> coordinator(
+      device->getHandle());
   // Create a single use pool
   coordinator.createCommandPool(
-      MyAppSingleUseCommandPool::SINGLE_USE_POOL,
-      device->getQueueFamilyIndex(MyAppQueue::COMPUTE_QUEUE));
+      MyAppCommandPool::SINGLE_USE_COMPUTE_POOL,
+      device->getQueueFamilyIndex(MyAppQueue::COMPUTE_QUEUE), true);
 
   // Create a single command in this pool
-  coordinator.createSingleUseCommand(
-      MyAppCommandBuffer::COMPUTE_CMD,
-      MyAppSingleUseCommandPool::SINGLE_USE_POOL);
+  coordinator.createSingleUseCommand(MyAppCommandBuffer::COMPUTE_CMD,
+                                     MyAppCommandPool::SINGLE_USE_COMPUTE_POOL);
 
   // Begin and record command
   coordinator.beginCommandBuffer(MyAppCommandBuffer::COMPUTE_CMD);
@@ -197,6 +195,6 @@ int main() {
   buffer.unmap();
   std::cout << "Finished, first element: " << bufferData[0] << std::endl;
 
-  // Cleanup
-  vkDestroyFence(device->getHandle(), fence, nullptr);
+  // Cleanup (not needed since syncMechanisms would delete it)
+  syncMechanisms.freeFence(MyAppFence::COMPUTE_FENCE);
 }
