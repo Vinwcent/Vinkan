@@ -70,12 +70,12 @@ class RenderPass<T>::Builder {
  public:
   void addAttachment(T attachmentType,
                      VkAttachmentDescription attachmentDescription,
-                     VkImageLayout attachmentReferenceLayout) {
+                     VkImageLayout subpassLayout) {
     assert(!attachmentIndices.contains(attachmentType));
     uint32_t attachmentIndex = attachments_.size();
     attachments_.push_back(attachmentDescription);
     attachmentRefs_.push_back(VkAttachmentReference{
-        .attachment = attachmentIndex, .layout = attachmentReferenceLayout});
+        .attachment = attachmentIndex, .layout = subpassLayout});
     attachmentIndices[attachmentType] = attachmentIndex;
   }
   void addSubpass(SubpassInfo<T> subpassInfo) {
