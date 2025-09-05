@@ -25,7 +25,7 @@ struct InstanceInfo {
 
   std::vector<const char *> validationLayers;
   bool includePortabilityExtensions;  // Needed to identify M-Series Mac GPU
-  std::vector<const char *> &extraVkExtensions;
+  std::vector<const char *> extraVkExtensions;
 };
 
 class Instance : public PtrHandleWrapper<VkInstance> {

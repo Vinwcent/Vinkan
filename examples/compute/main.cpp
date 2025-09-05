@@ -37,7 +37,6 @@ using MyAppResources =
 
 int main() {
   // Create the instance
-  std::vector<const char *> extraExtensions{};
   vinkan::InstanceInfo instanceInfo{
       .appName = "Example compute app",
       .appVersion = vinkan::SemanticVersion{.major = 0, .minor = 0, .patch = 1},
@@ -47,7 +46,7 @@ int main() {
       .apiVersion = VK_API_VERSION_1_2,
       .validationLayers = MyAppValidationLayers,
       .includePortabilityExtensions = NEED_PORTABILITY_EXTENSIONS,
-      .extraVkExtensions = extraExtensions};
+      .extraVkExtensions = {}};
   vinkan::Instance instance(instanceInfo);
 
   // Create the physical device
@@ -124,10 +123,10 @@ int main() {
                       {binding});
 
   // Initialize the pipelines
-  vinkan::Pipelines<MyAppPipeline, MyAppPipelineLayout> pipelines_(
+  vinkan::Pipelines<MyAppPipeline, MyAppPipelineLayout> pipelines(
       device->getHandle());
   // Create a pipeline layout
-  pipelines_.createLayout<MyAppPC>(
+  pipelines.createLayout<MyAppPC>(
       MyAppPipelineLayout::COMPUTE_PIP_LAYOUT,
       {resources.get(MyAppDescriptorSetLayout::SIMPLE_DESCRIPTOR_SET_LAYOUT)},
       VK_SHADER_STAGE_COMPUTE_BIT);
@@ -142,8 +141,8 @@ int main() {
           .layoutIdentifier = MyAppPipelineLayout::COMPUTE_PIP_LAYOUT,
           .shaderInfo = shaderFileInfo,
       };
-  pipelines_.createComputePipeline(MyAppPipeline::COMPUTE_PIPELINE,
-                                   computePipelineInfo);
+  pipelines.createComputePipeline(MyAppPipeline::COMPUTE_PIPELINE,
+                                  computePipelineInfo);
 
   // Create a fence
   vinkan::SyncMechanisms<MyAppFence, MyAppSemaphore> syncMechanisms(
@@ -165,17 +164,17 @@ int main() {
 
   // Begin and record command
   coordinator.beginCommandBuffer(commandBuffer);
-  pipelines_.bindCmdBuffer(commandBuffer, MyAppPipeline::COMPUTE_PIPELINE);
+  pipelines.bindCmdBuffer(commandBuffer, MyAppPipeline::COMPUTE_PIPELINE);
   VkDescriptorSet descSet =
       resources.get(MyAppDescriptorSet::SIMPLE_DESCRIPTOR_SET);
   vkCmdBindDescriptorSets(
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-      pipelines_.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT), 0, 1, &descSet,
-      0, nullptr);
+      pipelines.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT), 0, 1, &descSet, 0,
+      nullptr);
   // Set the push to 20 so that 10 + 20 gives 30
   MyAppPC pushConstants{.value = 20};
   vkCmdPushConstants(
-      commandBuffer, pipelines_.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT),
+      commandBuffer, pipelines.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT),
       VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(MyAppPC), &pushConstants);
   vkCmdDispatch(commandBuffer, 1, 1, 1);
   coordinator.endCommandBuffer(commandBuffer);
