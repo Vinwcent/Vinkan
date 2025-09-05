@@ -6,14 +6,15 @@
 #include <map>
 #include <set>
 #include <vector>
+#include <vinkan/logging/logger.hpp>
 
 #include "vinkan/generics/concepts.hpp"
-#include "vinkan/logging/logger.hpp"
 
 namespace vinkan {
 
 struct SubmitCommandBufferInfo {
   std::vector<VkSemaphore> waitSemaphores{};
+  std::vector<VkPipelineStageFlags> waitDstStages{};
   std::vector<VkSemaphore> signalSemaphores{};
   VkFence signalFence = VK_NULL_HANDLE;
   VkQueue queue;
@@ -99,7 +100,8 @@ class CommandCoordinator {
                            commandPoolIdentifier);
   }
 
-  VkCommandBuffer createSingleUseCommand(CommandPoolT commandPoolIdentifier) {
+  VkCommandBuffer createSingleUseCommandBuffer(
+      CommandPoolT commandPoolIdentifier) {
     assert(commandPools_.contains(commandPoolIdentifier));
     assert(singleUsePools_.contains(commandPoolIdentifier));
     auto commandPool = commandPools_[commandPoolIdentifier];
@@ -121,23 +123,15 @@ class CommandCoordinator {
     return commandBuffer;
   }
 
-  void freeCommandBuffer(std::vector<CommandT> commandIdentifiers) {
-    for (auto commandIdentifier : commandIdentifiers) {
-      assert(commandBuffers_.contains(commandIdentifier));
-      assert(commandToPool_.contains(commandIdentifier));
-
-      auto commandBuffer = commandBuffers_[commandIdentifier];
-      auto commandPool = commandToPool_[commandIdentifier];
-
-      vkFreeCommandBuffers(device_, commandPool, 1, &commandBuffer);
-      commandBuffers_.erase(commandIdentifier);
-      commandToPool_.erase(commandIdentifier);
-    }
-    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffers freed");
-  }
-
   void freeCommandBuffer(CommandT commandIdentifier) {
-    freeCommandBuffer(std::vector<CommandT>{commandIdentifier});
+    assert(commandBuffers_.contains(commandIdentifier));
+    assert(commandToPool_.contains(commandIdentifier));
+
+    auto commandPool = commandToPool_[commandIdentifier];
+    VkCommandBuffer commandBuffer = commandBuffers_[commandIdentifier];
+    freeCommandBuffer(commandPool, commandBuffer);
+    commandBuffers_.erase(commandIdentifier);
+    commandToPool_.erase(commandIdentifier);
   }
 
   void freeCommandBuffer(CommandPoolT commandPoolIdentifier,
@@ -149,62 +143,37 @@ class CommandCoordinator {
     SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer freed");
   }
 
-  void beginCommandBuffer(std::vector<CommandT> commandIdentifiers) {
-    for (auto commandIdentifier : commandIdentifiers) {
-      assert(commandBuffers_.contains(commandIdentifier));
-
-      VkCommandBufferBeginInfo beginInfo{};
-      beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
-      beginInfo.flags = 0;
-      beginInfo.pInheritanceInfo = nullptr;
-
-      if (vkBeginCommandBuffer(commandBuffers_[commandIdentifier],
-                               &beginInfo) != VK_SUCCESS) {
-        throw std::runtime_error("Failed to begin recording command buffer");
-      }
+  void beginCommandBuffer(VkCommandBuffer commandBuffer) {
+    VkCommandBufferBeginInfo beginInfo{};
+    beginInfo.sType = VK_STRUCTURE_TYPE_COMMAND_BUFFER_BEGIN_INFO;
+    beginInfo.flags = 0;
+    beginInfo.pInheritanceInfo = nullptr;
+    if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
+      throw std::runtime_error("Failed to begin recording command buffer");
     }
-    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer recording begun");
   }
 
-  void beginCommandBuffer(CommandT commandIdentifier) {
-    beginCommandBuffer(std::vector<CommandT>{commandIdentifier});
+  VkCommandBuffer beginCommandBuffer(CommandT commandIdentifier) {
+    assert(commandBuffers_.contains(commandIdentifier));
+    VkCommandBuffer commandBuffer = commandBuffers_[commandIdentifier];
+    beginCommandBuffer(commandBuffer);
+    return commandBuffer;
   }
 
-  void endCommandBuffer(std::vector<CommandT> commandIdentifiers) {
-    for (auto commandIdentifier : commandIdentifiers) {
-      assert(commandBuffers_.contains(commandIdentifier));
-
-      if (vkEndCommandBuffer(commandBuffers_[commandIdentifier]) !=
-          VK_SUCCESS) {
-        throw std::runtime_error("Failed to record command buffer");
-      }
-    }
-    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer recording ended");
+  void endCommandBuffer(VkCommandBuffer commandBuffer) {
+    vkEndCommandBuffer(commandBuffer);
   }
 
-  void endCommandBuffer(CommandT commandIdentifier) {
-    endCommandBuffer(std::vector<CommandT>{commandIdentifier});
-  }
-
-  void submitCommandBuffer(std::vector<CommandT> commandIdentifiers,
+  void submitCommandBuffer(std::vector<VkCommandBuffer> commandBuffers,
                            SubmitCommandBufferInfo submitBufferInfo) {
-    std::vector<VkCommandBuffer> commandBuffers;
-    for (auto commandIdentifier : commandIdentifiers) {
-      assert(commandBuffers_.contains(commandIdentifier));
-      commandBuffers.push_back(commandBuffers_[commandIdentifier]);
-    }
-
-    // TODO: Make wait stages a parameter
-    std::vector<VkPipelineStageFlags> waitStages(
-        submitBufferInfo.waitSemaphores.size(),
-        VK_PIPELINE_STAGE_COMPUTE_SHADER_BIT);
-
+    assert(submitBufferInfo.waitDstStages.size() ==
+           submitBufferInfo.waitSemaphores.size());
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
     submitInfo.waitSemaphoreCount =
         static_cast<uint32_t>(submitBufferInfo.waitSemaphores.size());
     submitInfo.pWaitSemaphores = submitBufferInfo.waitSemaphores.data();
-    submitInfo.pWaitDstStageMask = waitStages.data();
+    submitInfo.pWaitDstStageMask = submitBufferInfo.waitDstStages.data();
     submitInfo.commandBufferCount =
         static_cast<uint32_t>(commandBuffers.size());
     submitInfo.pCommandBuffers = commandBuffers.data();
@@ -219,9 +188,9 @@ class CommandCoordinator {
     SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer submitted");
   }
 
-  void submitCommandBuffer(CommandT commandIdentifier,
+  void submitCommandBuffer(VkCommandBuffer commandBuffer,
                            SubmitCommandBufferInfo submitBufferInfo) {
-    submitCommandBuffer(std::vector<CommandT>{commandIdentifier},
+    submitCommandBuffer(std::vector<VkCommandBuffer>{commandBuffer},
                         submitBufferInfo);
   }
 

@@ -342,29 +342,29 @@ int main() {
 
     // Record command buffer
     coordinator.resetCommandBuffer(currentCmd);
-    coordinator.beginCommandBuffer(currentCmd);
-    VkCommandBuffer cmdBuffer = coordinator.get(currentCmd);
+    auto commandBuffer = coordinator.beginCommandBuffer(currentCmd);
 
     // Begin render pass
-    renderStage->beginRenderPass(cmdBuffer, imageNumber);
+    renderStage->beginRenderPass(commandBuffer, imageNumber);
 
     // Bind pipeline
-    pipelines_.bindCmdBuffer(cmdBuffer, MyAppPipeline::GRAPHICS_PIPELINE);
+    pipelines_.bindCmdBuffer(commandBuffer, MyAppPipeline::GRAPHICS_PIPELINE);
     // Draw triangle
-    triangle.draw(cmdBuffer);
+    triangle.draw(commandBuffer);
 
     // End render pass
-    vkCmdEndRenderPass(cmdBuffer);
-    coordinator.endCommandBuffer(currentCmd);
+    vkCmdEndRenderPass(commandBuffer);
+    coordinator.endCommandBuffer(commandBuffer);
 
     // Submit
     VkQueue queue = device->getQueue(MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE, 0);
     vinkan::SubmitCommandBufferInfo submitInfo{
         .waitSemaphores = {imgAvailableS},
+        .waitDstStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
         .signalSemaphores = {drawFinish},
         .signalFence = gfxFence,
         .queue = device->getQueue(MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE, 0)};
-    coordinator.submitCommandBuffer(currentCmd, submitInfo);
+    coordinator.submitCommandBuffer(commandBuffer, submitInfo);
 
     // Present
     swapchain.present(imageNumber, queue, drawFinish);

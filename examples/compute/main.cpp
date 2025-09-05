@@ -21,7 +21,7 @@ enum class MyAppPipeline { COMPUTE_PIPELINE };
 enum class MyAppPipelineLayout { COMPUTE_PIP_LAYOUT };
 
 // Command buffers
-enum class MyAppCommandBuffer { COMPUTE_CMD };
+enum class MyAppCommandBuffer {};
 enum class MyAppCommandPool { SINGLE_USE_COMPUTE_POOL };
 enum class MyAppFence { COMPUTE_FENCE };
 enum class MyAppSemaphore { COMPUTE_SEMAPHORE };
@@ -160,31 +160,30 @@ int main() {
       device->getQueueFamilyIndex(MyAppQueue::COMPUTE_QUEUE), true);
 
   // Create a single command in this pool
-  coordinator.createSingleUseCommand(MyAppCommandBuffer::COMPUTE_CMD,
-                                     MyAppCommandPool::SINGLE_USE_COMPUTE_POOL);
+  VkCommandBuffer commandBuffer = coordinator.createSingleUseCommandBuffer(
+      MyAppCommandPool::SINGLE_USE_COMPUTE_POOL);
 
   // Begin and record command
-  coordinator.beginCommandBuffer(MyAppCommandBuffer::COMPUTE_CMD);
-  VkCommandBuffer cmdBuffer = coordinator.get(MyAppCommandBuffer::COMPUTE_CMD);
-  pipelines_.bindCmdBuffer(cmdBuffer, MyAppPipeline::COMPUTE_PIPELINE);
+  coordinator.beginCommandBuffer(commandBuffer);
+  pipelines_.bindCmdBuffer(commandBuffer, MyAppPipeline::COMPUTE_PIPELINE);
   VkDescriptorSet descSet =
       resources.get(MyAppDescriptorSet::SIMPLE_DESCRIPTOR_SET);
   vkCmdBindDescriptorSets(
-      cmdBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
+      commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
       pipelines_.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT), 0, 1, &descSet,
       0, nullptr);
   MyAppPC pushConstants{.value = 20};
   vkCmdPushConstants(
-      cmdBuffer, pipelines_.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT),
+      commandBuffer, pipelines_.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT),
       VK_SHADER_STAGE_COMPUTE_BIT, 0, sizeof(MyAppPC), &pushConstants);
-  vkCmdDispatch(cmdBuffer, 1, 1, 1);
-  coordinator.endCommandBuffer(MyAppCommandBuffer::COMPUTE_CMD);
+  vkCmdDispatch(commandBuffer, 1, 1, 1);
+  coordinator.endCommandBuffer(commandBuffer);
 
   // Submit the command
   vinkan::SubmitCommandBufferInfo submitInfo{
       .signalFence = fence,
       .queue = device->getQueue(MyAppQueue::COMPUTE_QUEUE, 0)};
-  coordinator.submitCommandBuffer(MyAppCommandBuffer::COMPUTE_CMD, submitInfo);
+  coordinator.submitCommandBuffer(commandBuffer, submitInfo);
 
   // Wait execution
   vkWaitForFences(device->getHandle(), 1, &fence, VK_TRUE, UINT64_MAX);
@@ -194,7 +193,4 @@ int main() {
   buffer.readBuffer(bufferData.data());
   buffer.unmap();
   std::cout << "Finished, first element: " << bufferData[0] << std::endl;
-
-  // Cleanup (not needed since syncMechanisms would delete it)
-  syncMechanisms.freeFence(MyAppFence::COMPUTE_FENCE);
 }
