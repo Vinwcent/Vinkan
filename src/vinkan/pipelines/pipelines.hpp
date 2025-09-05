@@ -145,8 +145,8 @@ class Pipelines {
 
   void bindCmdBuffer(VkCommandBuffer commandBuffer, PipelineT pipeline) {
     assert(pipelines_.contains(pipeline));
-    vkCmdBindPipeline(commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
-                      pipelines_[pipeline]);
+    auto bindPoint = pipelineToBindPoints_[pipeline];
+    vkCmdBindPipeline(commandBuffer, bindPoint, pipelines_[pipeline]);
   }
 
   VkPipelineLayout get(PipelineLayoutT pipelineLayout) {

@@ -1,4 +1,4 @@
-find_package(glfw)
+find_package(glfw3)
 add_executable(hello_triangle main.cpp)
 target_link_libraries(hello_triangle PRIVATE Vinkan::Vinkan glfw)
 set_target_properties(hello_triangle PROPERTIES

@@ -28,6 +28,10 @@ class RenderPass : public PtrHandleWrapper<VkRenderPass> {
     }
   }
 
+  std::map<T, uint32_t> getAttachmentIndices() const {
+    return attachmentIndices_;
+  }
+
  private:
   RenderPass(VkDevice device, VkRenderPass renderPass,
              std::map<T, uint32_t> attachmentIndices)
@@ -65,14 +69,13 @@ template <typename T>
 class RenderPass<T>::Builder {
  public:
   void addAttachment(T attachmentType,
-                     VkAttachmentDescription attachmentDescription) {
+                     VkAttachmentDescription attachmentDescription,
+                     VkImageLayout subpassLayout) {
     assert(!attachmentIndices.contains(attachmentType));
     uint32_t attachmentIndex = attachments_.size();
     attachments_.push_back(attachmentDescription);
-    // TODO: Enable different layout at the subpass addition step
-    attachmentRefs_.push_back(
-        VkAttachmentReference{.attachment = attachmentIndex,
-                              .layout = attachmentDescription.finalLayout});
+    attachmentRefs_.push_back(VkAttachmentReference{
+        .attachment = attachmentIndex, .layout = subpassLayout});
     attachmentIndices[attachmentType] = attachmentIndex;
   }
   void addSubpass(SubpassInfo<T> subpassInfo) {

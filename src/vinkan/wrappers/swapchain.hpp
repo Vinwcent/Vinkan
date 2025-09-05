@@ -28,11 +28,18 @@ class Swapchain : public PtrHandleWrapper<VkSwapchainKHR> {
   Swapchain(SwapchainInfo swapchainInfo);
   ~Swapchain();
 
+  std::vector<VkImageView> getImageViews();
+  SwapchainInfo getSwapchainInfo();
   std::optional<uint32_t> acquireNextImageIndex(
       VkSemaphore semaphoreToSignal, VkFence fenceToSignal = VK_NULL_HANDLE);
 
+  void present(uint32_t imageIndex, VkQueue presentQueue,
+               VkSemaphore semaphoreToWait);
+
  private:
+  std::vector<VkImageView> imageViews_{};
   VkDevice device_ = nullptr;
+  SwapchainInfo swapchainInfo_;
 };
 }  // namespace vinkan
 

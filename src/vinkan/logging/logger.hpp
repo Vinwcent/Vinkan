@@ -1,7 +1,7 @@
 #ifndef VINKAN_LOGGER_HPP
 #define VINKAN_LOGGER_HPP
 
-#define SPDLOG_ACTIVE_LEVEL 0
+#define SPDLOG_ACTIVE_LEVEL 1
 #include <spdlog/sinks/stdout_color_sinks.h>
 #include <spdlog/spdlog.h>
 

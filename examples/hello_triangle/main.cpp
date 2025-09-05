@@ -4,60 +4,7 @@
 #include <vinkan/vinkan.hpp>
 
 #include "extensions.hpp"
-
-const std::vector<const char *> MyAppValidationLayers = {
-    "VK_LAYER_KHRONOS_validation"};
-
-// Queue
-enum class MyAppQueue { GRAPHICS_QUEUE };
-
-// Resources
-enum class MyAppDescriptorSet { SIMPLE_DESCRIPTOR_SET };
-enum class MyAppDescriptorSetLayout { SIMPLE_DESCRIPTOR_SET_LAYOUT };
-enum class MyAppDescriptorPool { SIMPLE_DESCRIPTOR_POOL };
-enum class MyAppBuffers { SIMPLE_BUFFER };
-
-// Pipeline
-enum class MyAppPipeline { GRAPHICS_PIPELINE };
-enum class MyAppPipelineLayout { GRAPHICS_PIP_LAYOUT };
-
-// RenderPass
-enum class MyAppAttachment { SWAPCHAIN_ATTACHMENT };
-
-// Command buffers
-enum class MyAppCommandBuffer { GRAPHICS_CMD };
-enum class MyAppCommandPool { GRAPHICS_POOL };
-enum class MyAppSingleUseCommandPool { SINGLE_USE_POOL };
-enum class MyAppFence { GRAPHICS_FENCE };
-
-// Push constants
-struct MyAppPC {
-  uint32_t value;
-};
-
-// Vertex structure
-struct Vertex {
-  float position[3];
-
-  static VkVertexInputBindingDescription getBinding() {
-    return VkVertexInputBindingDescription{
-        .binding = 0,
-        .stride = sizeof(Vertex),
-        .inputRate = VK_VERTEX_INPUT_RATE_VERTEX};
-  }
-
-  static std::vector<VkVertexInputAttributeDescription> getAttributes() {
-    return {VkVertexInputAttributeDescription{
-        .location = 0,
-        .binding = 0,
-        .format = VK_FORMAT_R32G32B32_SFLOAT,
-        .offset = offsetof(Vertex, position)}};
-  }
-};
-
-using MyAppResources =
-    vinkan::Resources<MyAppBuffers, MyAppDescriptorSet,
-                      MyAppDescriptorSetLayout, MyAppDescriptorPool>;
+#include "hello_triangle.hpp"
 
 int main() {
   // Create the window (with glfw)
@@ -111,7 +58,7 @@ int main() {
                                                     physicalDevice.getQueues());
   deviceBuilder.addExtensions(DEVICE_EXTENSIONS);
   vinkan::QueueFamilyRequest<MyAppQueue> queueRequest{
-      .queueFamilyIdentifier = MyAppQueue::GRAPHICS_QUEUE,
+      .queueFamilyIdentifier = MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE,
       .flagsRequested = VK_QUEUE_GRAPHICS_BIT,
       .surfacePresentationSupport = surface.getHandle(),
       .nQueues = 1,
@@ -135,7 +82,7 @@ int main() {
        .colorSpace = VK_COLORSPACE_SRGB_NONLINEAR_KHR}};
   auto surfaceFormat = surfaceDetails.findBestFormat(wantedFormats);
   assert(surfaceFormat.has_value());
-  auto imageCount = std::min(3u, surfaceDetails.capabilities.maxImageCount);
+  auto imageCount = std::min(2u, surfaceDetails.capabilities.maxImageCount);
 
   vinkan::SwapchainInfo swapchainInfo{
       .device = device->getHandle(),
@@ -158,8 +105,9 @@ int main() {
           .loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
           .storeOp = VK_ATTACHMENT_STORE_OP_STORE,
           .initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
-          .finalLayout = VK_IMAGE_LAYOUT_GENERAL,
-      });
+          .finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+      },
+      VK_IMAGE_LAYOUT_GENERAL);
 
   vinkan::SubpassInfo<MyAppAttachment> subpassInfo{
       .colorAttachments = {MyAppAttachment::SWAPCHAIN_ATTACHMENT},
@@ -172,12 +120,12 @@ int main() {
   auto renderPass = renderPassBuilder.build(device->getHandle());
 
   // Initialize the pipelines
-  vinkan::Pipelines<MyAppPipeline, MyAppPipelineLayout> pipelines_(
+  vinkan::Pipelines<MyAppPipeline, MyAppPipelineLayout> pipelines(
       device->getHandle());
 
   // Create a pipeline layout
-  pipelines_.createLayout<MyAppPC>(MyAppPipelineLayout::GRAPHICS_PIP_LAYOUT, {},
-                                   VK_SHADER_STAGE_FRAGMENT_BIT);
+  pipelines.createLayout<MyAppPC>(MyAppPipelineLayout::GRAPHICS_PIP_LAYOUT, {},
+                                  VK_SHADER_STAGE_FRAGMENT_BIT);
 
   // Create a pipeline with this layout
   vinkan::ShaderFileInfo vertexShaderFileInfo{
@@ -190,89 +138,117 @@ int main() {
   // Vertex input state
   auto bindingDescription = Vertex::getBinding();
   auto attributeDescriptions = Vertex::getAttributes();
-  VkPipelineVertexInputStateCreateInfo vertexInputInfo{
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
-      .vertexBindingDescriptionCount = 1,
-      .pVertexBindingDescriptions = &bindingDescription,
-      .vertexAttributeDescriptionCount =
-          static_cast<uint32_t>(attributeDescriptions.size()),
-      .pVertexAttributeDescriptions = attributeDescriptions.data()};
 
-  // Configuration states
-  VkPipelineInputAssemblyStateCreateInfo inputAssemblyInfo{
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
-      .topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
-      .primitiveRestartEnable = VK_FALSE};
+  vinkan::createGfxPipeline(pipelines, imageExtent, vertexShaderFileInfo,
+                            fragmentShaderFileInfo, renderPass->getHandle(),
+                            bindingDescription, attributeDescriptions);
 
-  VkViewport viewport{.x = 0.0f,
-                      .y = 0.0f,
-                      .width = static_cast<float>(imageExtent.width),
-                      .height = static_cast<float>(imageExtent.height),
-                      .minDepth = 0.0f,
-                      .maxDepth = 1.0f};
+  vinkan::RenderStage::Builder<MyAppAttachment> builder(
+      *renderPass, device->getHandle(), imageCount);
+  builder.defineAttachment(MyAppAttachment::SWAPCHAIN_ATTACHMENT,
+                           swapchain.getImageViews());
+  std::unique_ptr<vinkan::RenderStage> renderStage =
+      builder.build(swapchain.getSwapchainInfo().imageExtent);
 
-  VkRect2D scissor{.offset = {0, 0}, .extent = imageExtent};
+  vinkan::SyncMechanisms<MyAppFence, MyAppSemaphore> syncMechanisms(
+      device->getHandle());
+  syncMechanisms.createFence(MyAppFence::GRAPHICS_FENCE, true);
+  syncMechanisms.createSemaphore(MyAppSemaphore::IMG_AVAILABLE);
+  syncMechanisms.createSemaphore(MyAppSemaphore::DRAW_FINISH);
+  VkFence gfxFence = syncMechanisms.getFence(MyAppFence::GRAPHICS_FENCE);
+  VkSemaphore imgAvailableS =
+      syncMechanisms.getSemaphore(MyAppSemaphore::IMG_AVAILABLE);
+  VkSemaphore drawFinish =
+      syncMechanisms.getSemaphore(MyAppSemaphore::DRAW_FINISH);
 
-  VkPipelineViewportStateCreateInfo viewportInfo{
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
-      .viewportCount = 1,
-      .pViewports = &viewport,
-      .scissorCount = 1,
-      .pScissors = &scissor};
+  // Initialize commands
+  vinkan::CommandCoordinator<MyAppCommandBuffer, MyAppCommandPool> coordinator(
+      device->getHandle());
+  // Create command pool
+  coordinator.createCommandPool(
+      MyAppCommandPool::GRAPHICS_POOL,
+      device->getQueueFamilyIndex(MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE),
+      false);
+  // Create 2 commands
+  coordinator.createLongLivedCommand(MyAppCommandBuffer::GRAPHICS_CMD_1,
+                                     MyAppCommandPool::GRAPHICS_POOL);
+  coordinator.createLongLivedCommand(MyAppCommandBuffer::GRAPHICS_CMD_2,
+                                     MyAppCommandPool::GRAPHICS_POOL);
+  coordinator.createLongLivedCommand(MyAppCommandBuffer::TRANSFER_CMD,
+                                     MyAppCommandPool::GRAPHICS_POOL);
 
-  VkPipelineRasterizationStateCreateInfo rasterizationInfo{
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
-      .depthClampEnable = VK_FALSE,
-      .rasterizerDiscardEnable = VK_FALSE,
-      .polygonMode = VK_POLYGON_MODE_FILL,
-      .cullMode = VK_CULL_MODE_BACK_BIT,
-      .frontFace = VK_FRONT_FACE_CLOCKWISE,
-      .depthBiasEnable = VK_FALSE,
-      .lineWidth = 1.0f};
+  // Create triangle model
+  std::vector<Vertex> triangleVertices = {
+      {{0.0f, -0.5f, 0.0f}},  // Bottom
+      {{0.5f, 0.5f, 0.0f}},   // Top right
+      {{-0.5f, 0.5f, 0.0f}}   // Top left
+  };
 
-  VkPipelineMultisampleStateCreateInfo multisampleInfo{
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
-      .rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
-      .sampleShadingEnable = VK_FALSE};
+  vinkan::ModelData<Vertex> triangleData{triangleVertices, {}};
+  vinkan::Model<Vertex> triangle(
+      device->getHandle(), physicalDevice.getMemoryProperties(), triangleData);
 
-  VkPipelineColorBlendAttachmentState colorBlendAttachment{
-      .blendEnable = VK_FALSE,
-      .colorWriteMask = VK_COLOR_COMPONENT_R_BIT | VK_COLOR_COMPONENT_G_BIT |
-                        VK_COLOR_COMPONENT_B_BIT | VK_COLOR_COMPONENT_A_BIT};
+  // Setup transfer for triangle
+  coordinator.resetCommandBuffer(MyAppCommandBuffer::TRANSFER_CMD);
+  VkCommandBuffer transferCmd =
+      coordinator.get(MyAppCommandBuffer::TRANSFER_CMD);
+  VkQueue transferQueue =
+      device->getQueue(MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE, 0);
+  triangle.transferModelToDevice(transferCmd, triangleData, transferQueue);
 
-  VkPipelineColorBlendStateCreateInfo colorBlendInfo{
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
-      .logicOpEnable = VK_FALSE,
-      .attachmentCount = 1,
-      .pAttachments = &colorBlendAttachment};
+  while (!glfwWindowShouldClose(window)) {
+    glfwPollEvents();
 
-  VkPipelineDepthStencilStateCreateInfo depthStencilInfo{
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_DEPTH_STENCIL_STATE_CREATE_INFO,
-      .depthTestEnable = VK_FALSE,
-      .depthWriteEnable = VK_FALSE,
-      .stencilTestEnable = VK_FALSE};
+    // Wait for previous frame
+    vkWaitForFences(device->getHandle(), 1, &gfxFence, VK_TRUE, UINT64_MAX);
+    vkResetFences(device->getHandle(), 1, &gfxFence);
 
-  VkPipelineDynamicStateCreateInfo dynamicStateInfo{
-      .sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
-      .dynamicStateCount = 0,
-      .pDynamicStates = nullptr};
+    // Acquire next image
+    auto imageNumberOpt =
+        swapchain.acquireNextImageIndex(imgAvailableS, VK_NULL_HANDLE);
+    if (!imageNumberOpt.has_value()) {
+      throw std::runtime_error("No support for resizing");
+    }
+    auto imageNumber = imageNumberOpt.value();
 
-  vinkan::GraphicsPipelineInfo<MyAppPipelineLayout, vinkan::ShaderFileInfo>
-      gfxPipelineInfo{
-          .layoutIdentifier = MyAppPipelineLayout::GRAPHICS_PIP_LAYOUT,
-          .vertexShaderInfo = vertexShaderFileInfo,
-          .fragmentShaderInfo = fragmentShaderFileInfo,
-          .vertexInputState = vertexInputInfo,
-          .renderPass = renderPass->getHandle(),
-          .subpass = 0,
-          .inputAssemblyInfo = inputAssemblyInfo,
-          .viewportInfo = viewportInfo,
-          .rasterizationInfo = rasterizationInfo,
-          .multisampleInfo = multisampleInfo,
-          .colorBlendInfo = colorBlendInfo,
-          .depthStencilInfo = depthStencilInfo,
-          .dynamicStateInfo = dynamicStateInfo};
+    // Select command buffer (alternate between the two)
+    MyAppCommandBuffer currentCmd = (imageNumber % 2 == 0)
+                                        ? MyAppCommandBuffer::GRAPHICS_CMD_1
+                                        : MyAppCommandBuffer::GRAPHICS_CMD_2;
 
-  pipelines_.createGraphicsPipeline(MyAppPipeline::GRAPHICS_PIPELINE,
-                                    gfxPipelineInfo);
+    // Record command buffer
+    coordinator.resetCommandBuffer(currentCmd);
+    auto commandBuffer = coordinator.beginCommandBuffer(currentCmd);
+
+    // Begin render pass
+    renderStage->beginRenderPass(commandBuffer, imageNumber);
+
+    // Bind pipeline
+    pipelines.bindCmdBuffer(commandBuffer, MyAppPipeline::GRAPHICS_PIPELINE);
+    // Draw triangle
+    triangle.draw(commandBuffer);
+
+    // End render pass
+    vkCmdEndRenderPass(commandBuffer);
+    coordinator.endCommandBuffer(commandBuffer);
+
+    // Submit
+    VkQueue queue = device->getQueue(MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE, 0);
+    vinkan::SubmitCommandBufferInfo submitInfo{
+        .waitSemaphores = {imgAvailableS},
+        .waitDstStages = {VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT},
+        .signalSemaphores = {drawFinish},
+        .signalFence = gfxFence,
+        .queue = device->getQueue(MyAppQueue::GRAPHICS_AND_PRESENT_QUEUE, 0)};
+    coordinator.submitCommandBuffer(commandBuffer, submitInfo);
+
+    // Present
+    swapchain.present(imageNumber, queue, drawFinish);
+  }
+
+  vkDeviceWaitIdle(device->getHandle());
+  glfwDestroyWindow(window);
+  glfwTerminate();
+
+  return 0;
 }
