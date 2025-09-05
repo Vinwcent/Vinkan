@@ -109,7 +109,7 @@ int main() {
   };
   resources.create(MyAppBuffers::SIMPLE_BUFFER, bufferInfo);
 
-  // Fill the buffer with value 22 everywhere
+  // Fill the buffer with value 10 everywhere
   vinkan::Buffer &buffer = resources.get(MyAppBuffers::SIMPLE_BUFFER);
   std::vector<uint32_t> bufferData(64, 10);
   buffer.map();
@@ -172,6 +172,7 @@ int main() {
       commandBuffer, VK_PIPELINE_BIND_POINT_COMPUTE,
       pipelines_.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT), 0, 1, &descSet,
       0, nullptr);
+  // Set the push to 20 so that 10 + 20 gives 30
   MyAppPC pushConstants{.value = 20};
   vkCmdPushConstants(
       commandBuffer, pipelines_.get(MyAppPipelineLayout::COMPUTE_PIP_LAYOUT),
