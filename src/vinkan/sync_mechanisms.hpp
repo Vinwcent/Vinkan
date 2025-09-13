@@ -112,7 +112,8 @@ class SyncMechanisms {
       semaphores_.erase(semaphoreIdentifier);
       SPDLOG_LOGGER_TRACE(
           get_vinkan_logger(),
-          "Semaphore " + std::string(magic_enum::enum_name(fenceIdentifier)) +
+          "Semaphore " +
+              std::string(magic_enum::enum_name(semaphoreIdentifier)) +
               " freed.");
     }
   }
