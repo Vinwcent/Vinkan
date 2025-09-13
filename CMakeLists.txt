@@ -8,8 +8,16 @@ set(CXX_STANDARD_REQUIRED ON)
 find_package(Vulkan REQUIRED)
 find_package(spdlog REQUIRED)
 
-option(VINKAN_WITH_GLFW "Build with GLFW support" OFF)
+# magic_enum
+include(FetchContent)
+FetchContent_Declare(
+	magic_enum
+	GIT_REPOSITORY https://github.com/Neargye/magic_enum.git
+	GIT_TAG        v0.9.7
+)
+FetchContent_MakeAvailable(magic_enum)
 
+option(VINKAN_WITH_GLFW "Build with GLFW support" OFF)
 if(VINKAN_WITH_GLFW)
     find_package(glfw3 REQUIRED)
 endif()
@@ -23,6 +31,7 @@ add_library(Vinkan::Vinkan ALIAS ${VINKAN_LIBRARY_NAME})
 target_link_libraries(${VINKAN_LIBRARY_NAME} PUBLIC 
     ${Vulkan_LIBRARIES} 
     spdlog::spdlog
+		magic_enum::magic_enum
 )
 if(VINKAN_WITH_GLFW)
     target_link_libraries(${VINKAN_LIBRARY_NAME} PUBLIC glfw)

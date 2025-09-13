@@ -56,7 +56,10 @@ class CommandCoordinator {
       singleUsePools_.insert(commandPoolIdentifier);
     }
     commandPools_[commandPoolIdentifier] = pool;
-    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command pool created");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(),
+                        "Command pool " +
+                            magic_enum::enum_name(commandPoolIdentifier) +
+                            " created");
   }
   void resetCommandBuffer(CommandT commandIdentifier) {
     assert(commandBuffers_.contains(commandIdentifier));
