@@ -58,7 +58,10 @@ class Pipelines {
         VK_SUCCESS) {
       throw std::runtime_error("Failed to create pipeline layout");
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Pipeline layout created");
+    SPDLOG_LOGGER_INFO(
+        get_vinkan_logger(),
+        "Pipeline layout " +
+            std::string(magic_enum::enum_name(layoutIdentifier)) + " created.");
   }
 
   VkPipelineBindPoint getBindPoint(PipelineT pipelineIdentifier) const {
@@ -93,7 +96,11 @@ class Pipelines {
     pipelines_[pipelineIdentifier] = pipeline;
     pipelineToBindPoints_[pipelineIdentifier] = VK_PIPELINE_BIND_POINT_COMPUTE;
 
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Pipeline created");
+    SPDLOG_LOGGER_INFO(
+        get_vinkan_logger(),
+        "Compute pipeline " +
+            std::string(magic_enum::enum_name(pipelineIdentifier)) +
+            " created.");
   }
 
   template <ValidShaderInfo ShaderInfoT>
@@ -140,13 +147,21 @@ class Pipelines {
     }
     pipelines_[pipelineIdentifier] = pipeline;
     pipelineToBindPoints_[pipelineIdentifier] = VK_PIPELINE_BIND_POINT_GRAPHICS;
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Pipeline created");
+    SPDLOG_LOGGER_INFO(
+        get_vinkan_logger(),
+        "Graphics pipeline " +
+            std::string(magic_enum::enum_name(pipelineIdentifier)) +
+            " created.");
   }
 
   void bindCmdBuffer(VkCommandBuffer commandBuffer, PipelineT pipeline) {
     assert(pipelines_.contains(pipeline));
     auto bindPoint = pipelineToBindPoints_[pipeline];
     vkCmdBindPipeline(commandBuffer, bindPoint, pipelines_[pipeline]);
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(),
+                        "Pipeline " +
+                            std::string(magic_enum::enum_name(pipeline)) +
+                            " was bound to a command buffer.");
   }
 
   VkPipelineLayout get(PipelineLayoutT pipelineLayout) {

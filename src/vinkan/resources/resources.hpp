@@ -31,6 +31,9 @@ class Resources {
     buffers_.emplace(
         bufferIdentifier,
         std::make_unique<Buffer>(device_, deviceMemoryProperties_, bufferInfo));
+    SPDLOG_LOGGER_INFO(
+        get_vinkan_logger(),
+        "Buffer " + std::string(magic_enum::enum_name(BufferT)) + " created.");
   }
 
   Buffer &get(BufferT bufferIdentifier) {

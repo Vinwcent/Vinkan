@@ -5,6 +5,7 @@
 #include <numeric>
 #include <vector>
 
+#include "magic_enum/magic_enum.hpp"
 #include "vinkan/generics/concepts.hpp"
 #include "vinkan/logging/logger.hpp"
 #include "vinkan/structs/descriptors_structs.hpp"
@@ -28,17 +29,29 @@ class ResourcesBinder {
     }
     layoutIdentifierToInfo_.emplace(setLayoutIdentifier, layoutInfo);
     setLayouts_.emplace(setLayoutIdentifier, builder.build());
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Descriptor set layout created");
+    SPDLOG_LOGGER_INFO(
+        get_vinkan_logger(),
+        "Descriptor set layout " +
+            std::string(magic_enum::enum_name(setLayoutIdentifier)) +
+            " created.");
   }
 
   void createPool(PoolT pool,
                   const std::vector<SetLayoutT> &setLayoutIdentifiers) {
+    SPDLOG_LOGGER_INFO(get_vinkan_logger(),
+                       "Creating descriptor pool " +
+                           std::string(magic_enum::enum_name(pool)) + ".");
     std::vector<SetLayoutInfo> layoutInfos{};
     for (auto setLayoutIdentifier : setLayoutIdentifiers) {
       assert(layoutIdentifierToInfo_.contains(setLayoutIdentifier) &&
              "Cannot create a pool when one of the layout is not defined yet");
       layoutInfos.push_back(layoutIdentifierToInfo_[setLayoutIdentifier]);
       layoutIdentifierToPool_.emplace(setLayoutIdentifier, pool);
+      SPDLOG_LOGGER_INFO(
+          get_vinkan_logger(),
+          std::string(magic_enum::enum_name(pool)) +
+              " will have the sets of the layout " +
+              std::string(magic_enum::enum_name(setLayoutIdentifier)) + ".");
     }
     int totalNSets =
         std::accumulate(layoutInfos.begin(), layoutInfos.end(), 0,
@@ -60,7 +73,10 @@ class ResourcesBinder {
       builder.addPoolSize(alloc.first, alloc.second);
     }
     pools_.emplace(pool, builder.build());
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Descriptor pool created");
+    SPDLOG_LOGGER_INFO(get_vinkan_logger(),
+                       "Descriptor pool " +
+                           std::string(magic_enum::enum_name(pool)) +
+                           " created.");
   };
 
   void createSet(
@@ -74,7 +90,10 @@ class ResourcesBinder {
       builder.setBuffer(resourceDescriptorInfo);
     }
     sets_.emplace(setIdentifier, builder.build());
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Descriptor set created");
+    SPDLOG_LOGGER_INFO(get_vinkan_logger(),
+                       "Descriptor set " +
+                           std::string(magic_enum::enum_name(setIdentifier)) +
+                           " created.");
   }
 
   VkDescriptorSet get(SetT setIdentifier) {

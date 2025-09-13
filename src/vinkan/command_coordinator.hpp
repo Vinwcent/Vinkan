@@ -8,6 +8,7 @@
 #include <vector>
 #include <vinkan/logging/logger.hpp>
 
+#include "magic_enum/magic_enum.hpp"
 #include "vinkan/generics/concepts.hpp"
 
 namespace vinkan {
@@ -56,10 +57,11 @@ class CommandCoordinator {
       singleUsePools_.insert(commandPoolIdentifier);
     }
     commandPools_[commandPoolIdentifier] = pool;
-    SPDLOG_LOGGER_TRACE(get_vinkan_logger(),
-                        "Command pool " +
-                            magic_enum::enum_name(commandPoolIdentifier) +
-                            " created");
+    SPDLOG_LOGGER_INFO(
+        get_vinkan_logger(),
+        "Command pool " +
+            std::string(magic_enum::enum_name(commandPoolIdentifier)) +
+            " created.");
   }
   void resetCommandBuffer(CommandT commandIdentifier) {
     assert(commandBuffers_.contains(commandIdentifier));
@@ -68,7 +70,10 @@ class CommandCoordinator {
         VK_SUCCESS) {
       throw std::runtime_error("Failed to reset command buffer");
     }
-    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer reset");
+    SPDLOG_LOGGER_TRACE(
+        get_vinkan_logger(),
+        "Command buffer " +
+            std::string(magic_enum::enum_name(commandIdentifier)) + " reset.");
   }
 
   void createLongLivedCommand(std::vector<CommandT> commandIdentifiers,
@@ -92,9 +97,12 @@ class CommandCoordinator {
     for (size_t i = 0; i < commandIdentifiers.size(); ++i) {
       commandBuffers_[commandIdentifiers[i]] = commandBuffers[i];
       commandToPool_[commandIdentifiers[i]] = commandPool;
+      SPDLOG_LOGGER_INFO(
+          get_vinkan_logger(),
+          "Command " +
+              std::string(magic_enum::enum_name(commandIdentifiers[i])) +
+              " created.");
     }
-    SPDLOG_LOGGER_TRACE(get_vinkan_logger(),
-                        "Long lived command buffers created");
   }
 
   void createLongLivedCommand(CommandT commandIdentifier,
@@ -122,13 +130,17 @@ class CommandCoordinator {
     }
 
     SPDLOG_LOGGER_TRACE(get_vinkan_logger(),
-                        "Single use command buffer created");
+                        "Single use command buffer created.");
     return commandBuffer;
   }
 
   void freeCommandBuffer(CommandT commandIdentifier) {
     assert(commandBuffers_.contains(commandIdentifier));
     assert(commandToPool_.contains(commandIdentifier));
+    SPDLOG_LOGGER_INFO(
+        get_vinkan_logger(),
+        "Freeing command buffer " +
+            std::string(magic_enum::enum_name(commandIdentifier)) + ".");
 
     auto commandPool = commandToPool_[commandIdentifier];
     VkCommandBuffer commandBuffer = commandBuffers_[commandIdentifier];
@@ -143,7 +155,8 @@ class CommandCoordinator {
     auto commandPool = commandPools_[commandPoolIdentifier];
 
     vkFreeCommandBuffers(device_, commandPool, 1, &commandBuffer);
-    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer freed");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(),
+                        "A command buffer has been freed.");
   }
 
   void beginCommandBuffer(VkCommandBuffer commandBuffer) {
@@ -154,16 +167,22 @@ class CommandCoordinator {
     if (vkBeginCommandBuffer(commandBuffer, &beginInfo) != VK_SUCCESS) {
       throw std::runtime_error("Failed to begin recording command buffer");
     }
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "A command buffer has begun.");
   }
 
   VkCommandBuffer beginCommandBuffer(CommandT commandIdentifier) {
     assert(commandBuffers_.contains(commandIdentifier));
+    SPDLOG_LOGGER_TRACE(
+        get_vinkan_logger(),
+        "Beginning command buffer " +
+            std::string(magic_enum::enum_name(commandIdentifier)) + ".");
     VkCommandBuffer commandBuffer = commandBuffers_[commandIdentifier];
     beginCommandBuffer(commandBuffer);
     return commandBuffer;
   }
 
   void endCommandBuffer(VkCommandBuffer commandBuffer) {
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "A command buffer ended.");
     vkEndCommandBuffer(commandBuffer);
   }
 
@@ -188,7 +207,9 @@ class CommandCoordinator {
                       submitBufferInfo.signalFence) != VK_SUCCESS) {
       throw std::runtime_error("Failed to submit command buffer");
     }
-    SPDLOG_LOGGER_TRACE(get_vinkan_logger(), "Command buffer submitted");
+    SPDLOG_LOGGER_TRACE(get_vinkan_logger(),
+                        std::to_string(commandBuffers.size()) +
+                            " command buffers were submitted");
   }
 
   void submitCommandBuffer(VkCommandBuffer commandBuffer,

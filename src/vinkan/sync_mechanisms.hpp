@@ -51,8 +51,11 @@ class SyncMechanisms {
         throw std::runtime_error("Failed to create fence");
       }
       fences_[fenceIdentifier] = fence;
+      SPDLOG_LOGGER_TRACE(
+          get_vinkan_logger(),
+          "Fence " + std::string(magic_enum::enum_name(fenceIdentifier)) +
+              " created.");
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Long lived fences created");
   }
 
   void createFence(FenceT fenceIdentifier, bool signaled = false) {
@@ -71,8 +74,12 @@ class SyncMechanisms {
         throw std::runtime_error("Failed to create semaphore");
       }
       semaphores_[semaphoreIdentifier] = semaphore;
+      SPDLOG_LOGGER_TRACE(
+          get_vinkan_logger(),
+          "Semaphore " +
+              std::string(magic_enum::enum_name(semaphoreIdentifier)) +
+              " created.");
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Long lived semaphores created");
   }
 
   void createSemaphore(SemT semaphoreIdentifier) {
@@ -86,8 +93,11 @@ class SyncMechanisms {
 
       vkDestroyFence(device_, fences_[fenceIdentifier], nullptr);
       fences_.erase(fenceIdentifier);
+      SPDLOG_LOGGER_TRACE(
+          get_vinkan_logger(),
+          "Fence " + std::string(magic_enum::enum_name(fenceIdentifier)) +
+              " freed.");
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Fences freed");
   }
 
   void freeFence(FenceT fenceIdentifier) {
@@ -100,8 +110,11 @@ class SyncMechanisms {
 
       vkDestroySemaphore(device_, semaphores_[semaphoreIdentifier], nullptr);
       semaphores_.erase(semaphoreIdentifier);
+      SPDLOG_LOGGER_TRACE(
+          get_vinkan_logger(),
+          "Semaphore " + std::string(magic_enum::enum_name(fenceIdentifier)) +
+              " freed.");
     }
-    SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Semaphores freed");
   }
 
   void freeSemaphore(SemT semaphoreIdentifier) {
