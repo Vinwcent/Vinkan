@@ -5,17 +5,17 @@
 
 namespace vinkan {
 
-DescriptorSet::Builder &DescriptorSet::Builder::setBuffer(
-    ResourceDescriptorInfo descriptorInfo) {
-  assert(!descriptorInfo.vkBufferInfo.empty());
-  // TODO: Support array elements
+DescriptorSet::Builder &DescriptorSet::Builder::setResource(
+    BufferDescriptorInfo descriptorInfo) {
+  assert(!descriptorInfo.vkResourceInfo.empty());
   assert(std::find(bindingIndices_.begin(), bindingIndices_.end(),
                    descriptorInfo.bindingIndex) == bindingIndices_.end() &&
-         "There's already something on this set binding");
-  auto layoutBinding = setLayout_.getLayoutBinding(descriptorInfo.bindingIndex);
-  assert(layoutBinding.descriptorCount == descriptorInfo.vkBufferInfo.size());
+         "There's already something on this binding");
 
-  bufferInfos_.push_back(descriptorInfo.vkBufferInfo);
+  auto layoutBinding = setLayout_.getLayoutBinding(descriptorInfo.bindingIndex);
+  assert(layoutBinding.descriptorCount == descriptorInfo.vkResourceInfo.size());
+
+  bufferInfos_.push_back(descriptorInfo.vkResourceInfo);
   auto &ownedBufferInfo = bufferInfos_[bufferInfos_.size() - 1];
 
   VkWriteDescriptorSet setWrite{};
@@ -24,6 +24,32 @@ DescriptorSet::Builder &DescriptorSet::Builder::setBuffer(
   setWrite.dstBinding = descriptorInfo.bindingIndex;
   setWrite.pBufferInfo = ownedBufferInfo.data();
   setWrite.descriptorCount = ownedBufferInfo.size();
+
+  bindingIndices_.push_back(descriptorInfo.bindingIndex);
+  setWrites_.push_back(setWrite);
+  return *this;
+}
+
+DescriptorSet::Builder &DescriptorSet::Builder::setResource(
+    ImageDescriptorInfo descriptorInfo) {
+  assert(!descriptorInfo.vkResourceInfo.empty());
+  assert(std::find(bindingIndices_.begin(), bindingIndices_.end(),
+                   descriptorInfo.bindingIndex) == bindingIndices_.end() &&
+         "There's already something on this binding");
+
+  auto layoutBinding = setLayout_.getLayoutBinding(descriptorInfo.bindingIndex);
+  assert(layoutBinding.descriptorCount == descriptorInfo.vkResourceInfo.size());
+
+  imageInfos_.push_back(descriptorInfo.vkResourceInfo);
+  auto &ownedImageInfo = imageInfos_[imageInfos_.size() - 1];
+
+  VkWriteDescriptorSet setWrite{};
+  setWrite.sType = VK_STRUCTURE_TYPE_WRITE_DESCRIPTOR_SET;
+  setWrite.descriptorType = layoutBinding.descriptorType;
+  setWrite.dstBinding = descriptorInfo.bindingIndex;
+  setWrite.pImageInfo = ownedImageInfo.data();
+  setWrite.descriptorCount = ownedImageInfo.size();
+
   bindingIndices_.push_back(descriptorInfo.bindingIndex);
   setWrites_.push_back(setWrite);
   return *this;

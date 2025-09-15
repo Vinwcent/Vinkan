@@ -1,6 +1,7 @@
 #include "buffer.hpp"
 
 #include "vinkan/logging/logger.hpp"
+#include "vinkan/utils/memory_types.hpp"
 
 // std
 #include <cassert>
@@ -8,21 +9,6 @@
 #include <stdexcept>
 
 namespace vinkan {
-
-uint32_t getMemoryTypeIndex(
-    uint32_t typeFilter,
-    VkPhysicalDeviceMemoryProperties deviceMemoryProperties,
-    VkMemoryPropertyFlags bufferMemoryPropFlags) {
-  for (uint32_t i = 0; i < deviceMemoryProperties.memoryTypeCount; i++) {
-    if ((typeFilter & (1 << i)) &&
-        (deviceMemoryProperties.memoryTypes[i].propertyFlags &
-         bufferMemoryPropFlags) == bufferMemoryPropFlags) {
-      return i;
-    }
-  }
-
-  throw std::runtime_error("failed to find suitable memory type!");
-}
 
 VkDeviceSize Buffer::getAlignment(VkDeviceSize instanceSize,
                                   VkDeviceSize minOffsetAlignment) {

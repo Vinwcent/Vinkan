@@ -26,14 +26,20 @@ enum class MyAppCommandPool { SINGLE_USE_COMPUTE_POOL };
 enum class MyAppFence { COMPUTE_FENCE };
 enum class MyAppSemaphore { COMPUTE_SEMAPHORE };
 
+enum class EmptyEnum1 {};
+enum class EmptyEnum2 {};
+enum class EmptyEnum3 {};
+enum class EmptyEnum4 {};
+
 // Push constants
 struct MyAppPC {
   uint32_t value;
 };
 
 using MyAppResources =
-    vinkan::Resources<MyAppBuffers, MyAppDescriptorSet,
-                      MyAppDescriptorSetLayout, MyAppDescriptorPool>;
+    vinkan::Resources<MyAppBuffers, EmptyEnum1, EmptyEnum2, EmptyEnum3,
+                      EmptyEnum4, MyAppDescriptorSet, MyAppDescriptorSetLayout,
+                      MyAppDescriptorPool>;
 
 int main() {
   // Create the instance

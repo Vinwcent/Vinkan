@@ -218,6 +218,64 @@ class CommandCoordinator {
                         submitBufferInfo);
   }
 
+  void addMemoryBarrier(VkCommandBuffer commandBuffer, VkAccessFlags srcAccess,
+                        VkAccessFlags dstAccess, VkPipelineStageFlags srcStage,
+                        VkPipelineStageFlags dstStage) {
+    VkMemoryBarrier memoryBarrier{.sType = VK_STRUCTURE_TYPE_MEMORY_BARRIER,
+                                  .pNext = nullptr,
+                                  .srcAccessMask = srcAccess,
+                                  .dstAccessMask = dstAccess};
+    vkCmdPipelineBarrier(commandBuffer, srcStage, dstStage, 0, 1,
+                         &memoryBarrier, 0, nullptr, 0, nullptr);
+  }
+
+  void addBufferMemoryBarrier(
+      VkCommandBuffer commandBuffer, VkBuffer buffer, VkAccessFlags srcAccess,
+      VkAccessFlags dstAccess, VkPipelineStageFlags srcStage,
+      VkPipelineStageFlags dstStage,
+      uint32_t srcQueueFamily = VK_QUEUE_FAMILY_IGNORED,
+      uint32_t dstQueueFamily = VK_QUEUE_FAMILY_IGNORED) {
+    VkBufferMemoryBarrier bufferBarrier{
+        .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = srcAccess,
+        .dstAccessMask = dstAccess,
+        .srcQueueFamilyIndex = srcQueueFamily,
+        .dstQueueFamilyIndex = dstQueueFamily,
+        .buffer = buffer,
+        .offset = 0,
+        .size = VK_WHOLE_SIZE};
+
+    vkCmdPipelineBarrier(commandBuffer, srcStage, dstStage, 0, 0, nullptr, 1,
+                         &bufferBarrier, 0, nullptr);
+  }
+
+  void addImageMemoryBarrier(
+      VkCommandBuffer commandBuffer, VkImage image, VkAccessFlags srcAccess,
+      VkAccessFlags dstAccess, VkImageLayout oldLayout, VkImageLayout newLayout,
+      VkPipelineStageFlags srcStage, VkPipelineStageFlags dstStage,
+      uint32_t srcQueueFamily = VK_QUEUE_FAMILY_IGNORED,
+      uint32_t dstQueueFamily = VK_QUEUE_FAMILY_IGNORED) {
+    VkImageMemoryBarrier imageBarrier{
+        .sType = VK_STRUCTURE_TYPE_IMAGE_MEMORY_BARRIER,
+        .pNext = nullptr,
+        .srcAccessMask = srcAccess,
+        .dstAccessMask = dstAccess,
+        .oldLayout = oldLayout,
+        .newLayout = newLayout,
+        .srcQueueFamilyIndex = srcQueueFamily,
+        .dstQueueFamilyIndex = dstQueueFamily,
+        .image = image,
+        .subresourceRange = {.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+                             .baseMipLevel = 0,
+                             .levelCount = VK_REMAINING_MIP_LEVELS,
+                             .baseArrayLayer = 0,
+                             .layerCount = VK_REMAINING_ARRAY_LAYERS}};
+
+    vkCmdPipelineBarrier(commandBuffer, srcStage, dstStage, 0, 0, nullptr, 0,
+                         nullptr, 1, &imageBarrier);
+  }
+
  private:
   VkDevice device_;
 

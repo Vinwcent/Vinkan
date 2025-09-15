@@ -15,6 +15,9 @@
 
 namespace vinkan {
 
+using AnyDescriptorInfo =
+    std::variant<BufferDescriptorInfo, ImageDescriptorInfo>;
+
 template <EnumType SetT, EnumType SetLayoutT, EnumType PoolT>
 class ResourcesBinder {
  public:
@@ -79,16 +82,18 @@ class ResourcesBinder {
                            " created.");
   };
 
-  void createSet(
-      SetT setIdentifier, SetLayoutT setLayoutIdentifier,
-      const std::vector<ResourceDescriptorInfo> &resourceDescriptorInfos) {
+  void createSet(SetT setIdentifier, SetLayoutT setLayoutIdentifier,
+                 const std::vector<AnyDescriptorInfo> &resourceInfos) {
     assert(setLayouts_.contains(setLayoutIdentifier));
     auto &setLayout = *setLayouts_[setLayoutIdentifier];
     auto &pool = *pools_[layoutIdentifierToPool_[setLayoutIdentifier]];
     DescriptorSet::Builder builder(device_, setLayout, pool);
-    for (auto &resourceDescriptorInfo : resourceDescriptorInfos) {
-      builder.setBuffer(resourceDescriptorInfo);
+
+    for (auto &resourceInfo : resourceInfos) {
+      std::visit([&builder](auto &&info) { builder.setResource(info); },
+                 resourceInfo);
     }
+
     sets_.emplace(setIdentifier, builder.build());
     SPDLOG_LOGGER_INFO(get_vinkan_logger(),
                        "Descriptor set " +

@@ -6,12 +6,16 @@ list(APPEND VINKAN_SOURCES
     src/vinkan/wrappers/physical_device.cpp
     src/vinkan/wrappers/swapchain.cpp
 		src/vinkan/wrappers/buffer.cpp
+		src/vinkan/wrappers/image.cpp
+		src/vinkan/wrappers/sampler.cpp
+		src/vinkan/wrappers/image_view.cpp
 
 		src/vinkan/wrappers/descriptors/descriptor_pool.cpp
 		src/vinkan/wrappers/descriptors/descriptor_set_layout.cpp
 		src/vinkan/wrappers/descriptors/descriptor_set.cpp
 
 		src/vinkan/pipelines/shader_module_maker.cpp
+		src/vinkan/resources/image_resource.cpp
 )
 list(APPEND VINKAN_HEADERS
     src/vinkan/wrappers/instance.hpp
