@@ -90,7 +90,8 @@ void Buffer::readBuffer(void *data) {
   memcpy(data, mapped, bufferSize);
 }
 
-void Buffer::writeToBuffer(void *data, VkDeviceSize size, VkDeviceSize offset) {
+void Buffer::writeToBuffer(const void *data, VkDeviceSize size,
+                           VkDeviceSize offset) {
   assert(mapped && "Cannot copy to unmapped buffer");
 
   if (size == VK_WHOLE_SIZE) {
