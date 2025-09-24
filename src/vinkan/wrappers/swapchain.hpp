@@ -28,6 +28,7 @@ class Swapchain : public PtrHandleWrapper<VkSwapchainKHR> {
   Swapchain(SwapchainInfo swapchainInfo);
   ~Swapchain();
 
+  std::vector<VkImage> getImages();
   std::vector<VkImageView> getImageViews();
   SwapchainInfo getSwapchainInfo();
   std::optional<uint32_t> acquireNextImageIndex(
@@ -37,6 +38,7 @@ class Swapchain : public PtrHandleWrapper<VkSwapchainKHR> {
                VkSemaphore semaphoreToWait);
 
  private:
+  std::vector<VkImage> images_{};
   std::vector<VkImageView> imageViews_{};
   VkDevice device_ = nullptr;
   SwapchainInfo swapchainInfo_;

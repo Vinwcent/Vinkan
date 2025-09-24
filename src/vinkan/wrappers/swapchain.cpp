@@ -2,8 +2,7 @@
 
 #include <cassert>
 #include <stdexcept>
-
-#include "vinkan/logging/logger.hpp"
+#include <vinkan/logging/logger.hpp>
 
 namespace vinkan {
 Swapchain::Swapchain(SwapchainInfo swapchainInfo)
@@ -87,21 +86,29 @@ void Swapchain::present(uint32_t imageIndex, VkQueue presentQueue,
   vkQueuePresentKHR(presentQueue, &presentInfo);
 }
 
+std::vector<VkImage> Swapchain::getImages() {
+  if (images_.size() == 0) {
+    uint32_t realImageCount;
+    vkGetSwapchainImagesKHR(device_, handle_, &realImageCount, nullptr);
+    images_.resize(realImageCount);
+    vkGetSwapchainImagesKHR(device_, handle_, &realImageCount, images_.data());
+  }
+  return images_;
+}
+
 std::vector<VkImageView> Swapchain::getImageViews() {
   if (imageViews_.size() > 0) {
     return imageViews_;
   }
-  std::vector<VkImage> images = {};
-  uint32_t realImageCount;
-  vkGetSwapchainImagesKHR(device_, handle_, &realImageCount, nullptr);
-  images.resize(realImageCount);
-  vkGetSwapchainImagesKHR(device_, handle_, &realImageCount, images.data());
+  if (images_.size() == 0) {
+    getImages();
+  }
 
-  imageViews_.resize(images.size());
+  imageViews_.resize(images_.size());
   for (size_t i = 0; i < imageViews_.size(); i++) {
     VkImageViewCreateInfo viewInfo{};
     viewInfo.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO;
-    viewInfo.image = images[i];
+    viewInfo.image = images_[i];
     viewInfo.viewType = VK_IMAGE_VIEW_TYPE_2D;
     viewInfo.format = swapchainInfo_.surfaceFormat.format;
     viewInfo.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT;
