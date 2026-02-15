@@ -31,8 +31,13 @@ class RenderStage {
     renderPassInfo.renderArea.extent = imageExtent_;
 
     std::vector<VkClearValue> clearValues(nAttachments_);
-    for (auto n = 0; n < nAttachments_; ++n) {
-      clearValues[n].color = {0., 0., 0., 1.0f};
+    for (uint32_t n = 0; n < nAttachments_; ++n) {
+      if (depthAttachmentIndex_.has_value() &&
+          n == depthAttachmentIndex_.value()) {
+        clearValues[n].depthStencil = {1.0f, 0};
+      } else {
+        clearValues[n].color = {0.f, 0.f, 0.f, 1.0f};
+      }
     }
     renderPassInfo.clearValueCount = static_cast<uint32_t>(clearValues.size());
     renderPassInfo.pClearValues = clearValues.data();
@@ -55,14 +60,17 @@ class RenderStage {
  private:
   RenderStage(VkDevice device, std::vector<VkFramebuffer> framebuffers,
               VkRenderPass renderPass, VkExtent2D imageExtent,
-              uint32_t nAttachments)
+              uint32_t nAttachments,
+              std::optional<uint32_t> depthAttachmentIndex)
       : framebuffers_(framebuffers),
         renderPass_(renderPass),
         imageExtent_(imageExtent),
         nAttachments_(nAttachments),
+        depthAttachmentIndex_(depthAttachmentIndex),
         device_(device) {}
 
   uint32_t nAttachments_;
+  std::optional<uint32_t> depthAttachmentIndex_;
   std::vector<VkFramebuffer> framebuffers_;
   VkRenderPass renderPass_;
   VkExtent2D imageExtent_;
@@ -80,10 +88,15 @@ class RenderStage::Builder {
       : device_(device), renderPass_(renderPass), nFrames_(nFrames) {}
 
   Builder &defineAttachment(AttachmentT attachmentIdentifier,
-                            std::vector<VkImageView> attachment) {
+                            std::vector<VkImageView> attachment,
+                            bool isDepth = false) {
     assert(!allAttachments_.contains(attachmentIdentifier) &&
            "Attachment already defined");
     allAttachments_.emplace(attachmentIdentifier, attachment);
+    if (isDepth) {
+      depthAttachmentIndex_ =
+          renderPass_.getAttachmentIndices().at(attachmentIdentifier);
+    }
     return *this;
   }
 
@@ -122,9 +135,9 @@ class RenderStage::Builder {
       }
     }
 
-    std::unique_ptr<RenderStage> renderStage(
-        new RenderStage(device_, framebuffers, renderPass_.getHandle(),
-                        imageExtent, allAttachments_.size()));
+    std::unique_ptr<RenderStage> renderStage(new RenderStage(
+        device_, framebuffers, renderPass_.getHandle(), imageExtent,
+        allAttachments_.size(), depthAttachmentIndex_));
     SPDLOG_LOGGER_INFO(get_vinkan_logger(), "Render stage created");
     return std::move(renderStage);
   }
@@ -134,6 +147,7 @@ class RenderStage::Builder {
   RenderPass<AttachmentT> &renderPass_;
   std::map<AttachmentT, std::vector<VkImageView>> allAttachments_;
   uint32_t nFrames_;
+  std::optional<uint32_t> depthAttachmentIndex_;
 };
 
 }  // namespace vinkan

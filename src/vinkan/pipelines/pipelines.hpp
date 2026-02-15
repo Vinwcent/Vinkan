@@ -4,6 +4,7 @@
 #include <map>
 #include <vector>
 
+#include "magic_enum/magic_enum.hpp"
 #include "vinkan/generics/concepts.hpp"
 #include "vinkan/logging/logger.hpp"
 #include "vinkan/pipelines/shader_module_maker.hpp"
