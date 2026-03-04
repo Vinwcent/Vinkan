@@ -19,6 +19,8 @@ struct SubmitCommandBufferInfo {
   std::vector<VkSemaphore> signalSemaphores{};
   VkFence signalFence = VK_NULL_HANDLE;
   VkQueue queue;
+  std::vector<uint64_t> timelineWaitValues{};
+  std::vector<uint64_t> timelineSignalValues{};
 };
 
 template <EnumType CommandT, EnumType CommandPoolT>
@@ -190,8 +192,32 @@ class CommandCoordinator {
                            SubmitCommandBufferInfo submitBufferInfo) {
     assert(submitBufferInfo.waitDstStages.size() ==
            submitBufferInfo.waitSemaphores.size());
+
+    bool hasTimeline = !submitBufferInfo.timelineWaitValues.empty() ||
+                       !submitBufferInfo.timelineSignalValues.empty();
+
+    VkTimelineSemaphoreSubmitInfo timelineInfo{
+        .sType = VK_STRUCTURE_TYPE_TIMELINE_SEMAPHORE_SUBMIT_INFO,
+    };
+
+    if (hasTimeline) {
+      assert(submitBufferInfo.timelineWaitValues.size() ==
+             submitBufferInfo.waitSemaphores.size());
+      assert(submitBufferInfo.timelineSignalValues.size() ==
+             submitBufferInfo.signalSemaphores.size());
+      timelineInfo.waitSemaphoreValueCount =
+          static_cast<uint32_t>(submitBufferInfo.timelineWaitValues.size());
+      timelineInfo.pWaitSemaphoreValues =
+          submitBufferInfo.timelineWaitValues.data();
+      timelineInfo.signalSemaphoreValueCount =
+          static_cast<uint32_t>(submitBufferInfo.timelineSignalValues.size());
+      timelineInfo.pSignalSemaphoreValues =
+          submitBufferInfo.timelineSignalValues.data();
+    }
+
     VkSubmitInfo submitInfo{};
     submitInfo.sType = VK_STRUCTURE_TYPE_SUBMIT_INFO;
+    submitInfo.pNext = hasTimeline ? &timelineInfo : nullptr;
     submitInfo.waitSemaphoreCount =
         static_cast<uint32_t>(submitBufferInfo.waitSemaphores.size());
     submitInfo.pWaitSemaphores = submitBufferInfo.waitSemaphores.data();
