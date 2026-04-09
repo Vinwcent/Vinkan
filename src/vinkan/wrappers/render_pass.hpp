@@ -18,9 +18,8 @@ namespace vinkan {
 //  WRAPPER  //
 ///////////////
 
-template <typename T>
-class RenderPass : public PtrHandleWrapper<VkRenderPass> {
- public:
+template <typename T> class RenderPass : public PtrHandleWrapper<VkRenderPass> {
+public:
   class Builder;
   ~RenderPass() {
     if (isHandleValid()) {
@@ -32,7 +31,7 @@ class RenderPass : public PtrHandleWrapper<VkRenderPass> {
     return attachmentIndices_;
   }
 
- private:
+private:
   RenderPass(VkDevice device, VkRenderPass renderPass,
              std::map<T, uint32_t> attachmentIndices)
       : attachmentIndices_(attachmentIndices), device_(device) {
@@ -48,8 +47,7 @@ class RenderPass : public PtrHandleWrapper<VkRenderPass> {
 //  BUILDER  //
 ///////////////
 
-template <EnumType T>
-struct SubpassInfo {
+template <EnumType T> struct SubpassInfo {
   std::vector<T> colorAttachments{};
   std::vector<T> inputAttachments{};
   std::vector<T> preserveAttachments{};
@@ -65,9 +63,8 @@ struct InternalSubpassInfo {
   std::optional<VkAttachmentReference> depthAttachment{};
 };
 
-template <typename T>
-class RenderPass<T>::Builder {
- public:
+template <typename T> class RenderPass<T>::Builder {
+public:
   void addAttachment(T attachmentType,
                      VkAttachmentDescription attachmentDescription,
                      VkImageLayout subpassLayout) {
@@ -138,8 +135,8 @@ class RenderPass<T>::Builder {
     return std::move(renderPass);
   }
 
- private:
-  std::vector<InternalSubpassInfo> intSubpassInfo_{};  // For memory consistency
+private:
+  std::vector<InternalSubpassInfo> intSubpassInfo_{}; // For memory consistency
 
   std::map<T, uint32_t> attachmentIndices{};
   std::vector<VkAttachmentDescription> attachments_{};
@@ -181,6 +178,6 @@ class RenderPass<T>::Builder {
   }
 };
 
-}  // namespace vinkan
+} // namespace vinkan
 
 #endif

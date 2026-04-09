@@ -3,13 +3,13 @@
 
 #include "vinkan/generics/concepts.hpp"
 #include "vinkan/wrappers/render_pass.hpp"
+#include <cassert>
 
 namespace vinkan {
 
 class RenderStage {
- public:
-  template <EnumType AttachmentT>
-  class Builder;
+public:
+  template <EnumType AttachmentT> class Builder;
 
   ~RenderStage() {
     for (VkFramebuffer framebuffer : framebuffers_) {
@@ -57,17 +57,14 @@ class RenderStage {
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
   }
 
- private:
+private:
   RenderStage(VkDevice device, std::vector<VkFramebuffer> framebuffers,
               VkRenderPass renderPass, VkExtent2D imageExtent,
               uint32_t nAttachments,
               std::optional<uint32_t> depthAttachmentIndex)
-      : framebuffers_(framebuffers),
-        renderPass_(renderPass),
-        imageExtent_(imageExtent),
-        nAttachments_(nAttachments),
-        depthAttachmentIndex_(depthAttachmentIndex),
-        device_(device) {}
+      : framebuffers_(framebuffers), renderPass_(renderPass),
+        imageExtent_(imageExtent), nAttachments_(nAttachments),
+        depthAttachmentIndex_(depthAttachmentIndex), device_(device) {}
 
   uint32_t nAttachments_;
   std::optional<uint32_t> depthAttachmentIndex_;
@@ -76,13 +73,11 @@ class RenderStage {
   VkExtent2D imageExtent_;
   VkDevice device_;
 
-  template <EnumType AttachmentT>
-  friend class Builder;
+  template <EnumType AttachmentT> friend class Builder;
 };
 
-template <EnumType AttachmentT>
-class RenderStage::Builder {
- public:
+template <EnumType AttachmentT> class RenderStage::Builder {
+public:
   Builder(RenderPass<AttachmentT> &renderPass, VkDevice device,
           uint32_t nFrames)
       : device_(device), renderPass_(renderPass), nFrames_(nFrames) {}
@@ -142,7 +137,7 @@ class RenderStage::Builder {
     return std::move(renderStage);
   }
 
- private:
+private:
   VkDevice device_;
   RenderPass<AttachmentT> &renderPass_;
   std::map<AttachmentT, std::vector<VkImageView>> allAttachments_;
@@ -150,5 +145,5 @@ class RenderStage::Builder {
   std::optional<uint32_t> depthAttachmentIndex_;
 };
 
-}  // namespace vinkan
+} // namespace vinkan
 #endif

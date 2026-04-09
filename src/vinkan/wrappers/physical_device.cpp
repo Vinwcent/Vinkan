@@ -2,6 +2,7 @@
 
 #include <cstdint>
 #include <set>
+#include <sstream>
 #include <stdexcept>
 
 #include "vinkan/logging/logger.hpp"
@@ -148,8 +149,8 @@ SurfaceSupportDetails PhysicalDevice::getSurfaceSupportDetails_(
 SurfaceSupportDetails getSurfaceSupportDetails(VkPhysicalDevice physicalDevice,
                                                VkSurfaceKHR surface);
 
-std::vector<VkPhysicalDevice> PhysicalDevice::getVkCompatibleDevice_(
-    VkInstance instance) {
+std::vector<VkPhysicalDevice>
+PhysicalDevice::getVkCompatibleDevice_(VkInstance instance) {
   uint32_t nPhyDevices = 0;
   vkEnumeratePhysicalDevices(instance, &nPhyDevices, nullptr);
   if (nPhyDevices == 0) {
@@ -158,14 +159,14 @@ std::vector<VkPhysicalDevice> PhysicalDevice::getVkCompatibleDevice_(
 
   std::vector<VkPhysicalDevice> physicalDevices(nPhyDevices);
   vkEnumeratePhysicalDevices(instance, &nPhyDevices, physicalDevices.data());
-  SPDLOG_LOGGER_INFO(
-      get_vinkan_logger(),
-      std::to_string(nPhyDevices) + " Vulkan compatible devices found");
+  SPDLOG_LOGGER_INFO(get_vinkan_logger(),
+                     std::to_string(nPhyDevices) +
+                         " Vulkan compatible devices found");
   return physicalDevices;
 }
 
-std::vector<QueueFamilyInfo> PhysicalDevice::getQueuesInfo_(
-    VkPhysicalDevice physicalDevice) const {
+std::vector<QueueFamilyInfo>
+PhysicalDevice::getQueuesInfo_(VkPhysicalDevice physicalDevice) const {
   uint32_t nQueueFamilies = 0;
   vkGetPhysicalDeviceQueueFamilyProperties(physicalDevice, &nQueueFamilies,
                                            nullptr);
@@ -207,5 +208,4 @@ bool PhysicalDevice::supportExtensions_(
   return requiredExtensions.empty();
 }
 
-}  // namespace vinkan
-
+} // namespace vinkan

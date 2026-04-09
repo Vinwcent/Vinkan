@@ -1,6 +1,7 @@
 #ifndef VINKAN_RESOURCES_HPP
 #define VINKAN_RESOURCES_HPP
 
+#include <cassert>
 #include <vulkan/vulkan.h>
 
 #include <map>
@@ -17,14 +18,12 @@
 
 namespace vinkan {
 
-template <EnumType BufferT>
-struct VinkanBufferBinding {
+template <EnumType BufferT> struct VinkanBufferBinding {
   uint32_t bindingIndex;
   BufferT buffer;
 };
 
-template <EnumType ImageResourceT>
-struct VinkanImageResourceBinding {
+template <EnumType ImageResourceT> struct VinkanImageResourceBinding {
   uint32_t bindingIndex;
   ImageResourceT imageResource;
   VkImageLayout layout = VK_IMAGE_LAYOUT_SHADER_READ_ONLY_OPTIMAL;
@@ -34,11 +33,10 @@ template <EnumType BufferT, EnumType ImageT, EnumType ImageResourceT,
           EnumType ImageViewT, EnumType SamplerT, EnumType SetT,
           EnumType SetLayoutT, EnumType PoolT>
 class Resources {
- public:
+public:
   Resources(VkDevice device,
             VkPhysicalDeviceMemoryProperties deviceMemoryProperties)
-      : device_(device),
-        deviceMemoryProperties_(deviceMemoryProperties),
+      : device_(device), deviceMemoryProperties_(deviceMemoryProperties),
         resourcesBinder_(device) {}
 
   void create(BufferT bufferIdentifier, BufferInfo bufferInfo) {
@@ -91,8 +89,8 @@ class Resources {
     assert(samplers_.contains(samplerIdentifier) &&
            "Sampler must exist before creating ImageResource");
 
-    auto& imageView = *imageViews_[imageViewIdentifier];
-    auto& sampler = *samplers_[samplerIdentifier];
+    auto &imageView = *imageViews_[imageViewIdentifier];
+    auto &sampler = *samplers_[samplerIdentifier];
 
     imageResources_.emplace(
         imageResourceIdentifier,
@@ -110,7 +108,7 @@ class Resources {
     assert(imageViews_.contains(imageViewIdentifier) &&
            "ImageView must exist before creating ImageResource");
 
-    auto& imageView = *imageViews_[imageViewIdentifier];
+    auto &imageView = *imageViews_[imageViewIdentifier];
 
     imageResources_.emplace(imageResourceIdentifier,
                             std::make_unique<ImageResource>(imageView));
@@ -121,27 +119,27 @@ class Resources {
             " created (storage image).");
   }
 
-  Buffer& get(BufferT bufferIdentifier) {
+  Buffer &get(BufferT bufferIdentifier) {
     assert(buffers_.contains(bufferIdentifier));
     return *buffers_[bufferIdentifier];
   }
 
-  Image& get(ImageT imageIdentifier) {
+  Image &get(ImageT imageIdentifier) {
     assert(images_.contains(imageIdentifier));
     return *images_[imageIdentifier];
   }
 
-  ImageView& get(ImageViewT imageViewIdentifier) {
+  ImageView &get(ImageViewT imageViewIdentifier) {
     assert(imageViews_.contains(imageViewIdentifier));
     return *imageViews_[imageViewIdentifier];
   }
 
-  Sampler& get(SamplerT samplerIdentifier) {
+  Sampler &get(SamplerT samplerIdentifier) {
     assert(samplers_.contains(samplerIdentifier));
     return *samplers_[samplerIdentifier];
   }
 
-  ImageResource& get(ImageResourceT imageResourceIdentifier) {
+  ImageResource &get(ImageResourceT imageResourceIdentifier) {
     assert(imageResources_.contains(imageResourceIdentifier));
     return *imageResources_[imageResourceIdentifier];
   }
@@ -159,7 +157,7 @@ class Resources {
   }
 
   void createPool(PoolT pool,
-                  const std::vector<SetLayoutT>& setLayoutIdentifiers) {
+                  const std::vector<SetLayoutT> &setLayoutIdentifiers) {
     resourcesBinder_.createPool(pool, setLayoutIdentifiers);
   }
 
@@ -171,12 +169,12 @@ class Resources {
       SetT setIdentifier, SetLayoutT setLayoutIdentifier,
       const std::vector<
           std::variant<VinkanBufferBinding<BufferT>,
-                       VinkanImageResourceBinding<ImageResourceT>>>& bindings) {
+                       VinkanImageResourceBinding<ImageResourceT>>> &bindings) {
     std::vector<AnyDescriptorInfo> resourceDescriptorInfos{};
 
-    for (const auto& binding : bindings) {
+    for (const auto &binding : bindings) {
       std::visit(
-          [&](const auto& specificBinding) {
+          [&](const auto &specificBinding) {
             auto descriptorInfo = getResourceDescriptorInfo(specificBinding);
             resourceDescriptorInfos.push_back(descriptorInfo);
           },
@@ -187,19 +185,19 @@ class Resources {
                                resourceDescriptorInfos);
   }
 
- private:
-  BufferDescriptorInfo getResourceDescriptorInfo(
-      const VinkanBufferBinding<BufferT>& binding) {
+private:
+  BufferDescriptorInfo
+  getResourceDescriptorInfo(const VinkanBufferBinding<BufferT> &binding) {
     assert(buffers_.contains(binding.buffer));
-    auto& buffer = buffers_.at(binding.buffer);
+    auto &buffer = buffers_.at(binding.buffer);
     return BufferDescriptorInfo{binding.bindingIndex,
                                 {buffer->descriptorInfo()}};
   }
 
   ImageDescriptorInfo getResourceDescriptorInfo(
-      const VinkanImageResourceBinding<ImageResourceT>& binding) {
+      const VinkanImageResourceBinding<ImageResourceT> &binding) {
     assert(imageResources_.contains(binding.imageResource));
-    auto& imageResource = imageResources_.at(binding.imageResource);
+    auto &imageResource = imageResources_.at(binding.imageResource);
     return ImageDescriptorInfo{binding.bindingIndex,
                                {imageResource->descriptorInfo(binding.layout)}};
   }
@@ -215,6 +213,6 @@ class Resources {
   ResourcesBinder<SetT, SetLayoutT, PoolT> resourcesBinder_;
 };
 
-}  // namespace vinkan
+} // namespace vinkan
 
 #endif

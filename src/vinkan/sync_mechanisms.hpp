@@ -1,6 +1,7 @@
 #ifndef VINKAN_SYNC_MECHANISMS_HPP
 #define VINKAN_SYNC_MECHANISMS_HPP
 
+#include <cassert>
 #include <vulkan/vulkan.h>
 
 #include <map>
@@ -11,9 +12,8 @@
 
 namespace vinkan {
 
-template <EnumType FenceT, EnumType SemT>
-class SyncMechanisms {
- public:
+template <EnumType FenceT, EnumType SemT> class SyncMechanisms {
+public:
   VkFence getFence(FenceT fenceIdentifier) {
     assert(fences_.contains(fenceIdentifier));
     return fences_.at(fenceIdentifier);
@@ -27,16 +27,16 @@ class SyncMechanisms {
   SyncMechanisms(VkDevice device) : device_(device) {}
 
   ~SyncMechanisms() {
-    for (auto& [identifier, fence] : fences_) {
+    for (auto &[identifier, fence] : fences_) {
       vkDestroyFence(device_, fence, nullptr);
     }
-    for (auto& [identifier, semaphore] : semaphores_) {
+    for (auto &[identifier, semaphore] : semaphores_) {
       vkDestroySemaphore(device_, semaphore, nullptr);
     }
   }
 
-  SyncMechanisms(const SyncMechanisms&) = delete;
-  SyncMechanisms& operator=(const SyncMechanisms&) = delete;
+  SyncMechanisms(const SyncMechanisms &) = delete;
+  SyncMechanisms &operator=(const SyncMechanisms &) = delete;
 
   // Fence
   void createFence(std::vector<FenceT> fenceIdentifiers,
@@ -122,11 +122,11 @@ class SyncMechanisms {
     freeSemaphore(std::vector<SemT>{semaphoreIdentifier});
   }
 
- private:
+private:
   VkDevice device_;
   std::map<FenceT, VkFence> fences_;
   std::map<SemT, VkSemaphore> semaphores_;
 };
 
-}  // namespace vinkan
+} // namespace vinkan
 #endif

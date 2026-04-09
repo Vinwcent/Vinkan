@@ -1,6 +1,7 @@
 #ifndef VINKAN_COMMAND_COORDINATOR_HPP
 #define VINKAN_COMMAND_COORDINATOR_HPP
 
+#include <cassert>
 #include <vulkan/vulkan.h>
 
 #include <map>
@@ -23,9 +24,8 @@ struct SubmitCommandBufferInfo {
   std::vector<uint64_t> timelineSignalValues{};
 };
 
-template <EnumType CommandT, EnumType CommandPoolT>
-class CommandCoordinator {
- public:
+template <EnumType CommandT, EnumType CommandPoolT> class CommandCoordinator {
+public:
   VkCommandBuffer get(CommandT commandIdentifier) {
     assert(commandBuffers_.contains(commandIdentifier));
     return commandBuffers_.at(commandIdentifier);
@@ -33,13 +33,13 @@ class CommandCoordinator {
 
   CommandCoordinator(VkDevice device) : device_(device) {}
   ~CommandCoordinator() {
-    for (auto& [identifier, pool] : commandPools_) {
+    for (auto &[identifier, pool] : commandPools_) {
       vkDestroyCommandPool(device_, pool, nullptr);
     }
   }
 
-  CommandCoordinator(const CommandCoordinator&) = delete;
-  CommandCoordinator& operator=(const CommandCoordinator&) = delete;
+  CommandCoordinator(const CommandCoordinator &) = delete;
+  CommandCoordinator &operator=(const CommandCoordinator &) = delete;
 
   void createCommandPool(CommandPoolT commandPoolIdentifier,
                          uint32_t queueFamilyIndex, bool singleUsagePool) {
@@ -113,8 +113,8 @@ class CommandCoordinator {
                            commandPoolIdentifier);
   }
 
-  VkCommandBuffer createSingleUseCommandBuffer(
-      CommandPoolT commandPoolIdentifier) {
+  VkCommandBuffer
+  createSingleUseCommandBuffer(CommandPoolT commandPoolIdentifier) {
     assert(commandPools_.contains(commandPoolIdentifier));
     assert(singleUsePools_.contains(commandPoolIdentifier));
     auto commandPool = commandPools_[commandPoolIdentifier];
@@ -255,12 +255,13 @@ class CommandCoordinator {
                          &memoryBarrier, 0, nullptr, 0, nullptr);
   }
 
-  void addBufferMemoryBarrier(
-      VkCommandBuffer commandBuffer, VkBuffer buffer, VkAccessFlags srcAccess,
-      VkAccessFlags dstAccess, VkPipelineStageFlags srcStage,
-      VkPipelineStageFlags dstStage,
-      uint32_t srcQueueFamily = VK_QUEUE_FAMILY_IGNORED,
-      uint32_t dstQueueFamily = VK_QUEUE_FAMILY_IGNORED) {
+  void
+  addBufferMemoryBarrier(VkCommandBuffer commandBuffer, VkBuffer buffer,
+                         VkAccessFlags srcAccess, VkAccessFlags dstAccess,
+                         VkPipelineStageFlags srcStage,
+                         VkPipelineStageFlags dstStage,
+                         uint32_t srcQueueFamily = VK_QUEUE_FAMILY_IGNORED,
+                         uint32_t dstQueueFamily = VK_QUEUE_FAMILY_IGNORED) {
     VkBufferMemoryBarrier bufferBarrier{
         .sType = VK_STRUCTURE_TYPE_BUFFER_MEMORY_BARRIER,
         .pNext = nullptr,
@@ -302,7 +303,7 @@ class CommandCoordinator {
                          nullptr, 1, &imageBarrier);
   }
 
- private:
+private:
   VkDevice device_;
 
   std::set<CommandPoolT> singleUsePools_;
@@ -311,5 +312,5 @@ class CommandCoordinator {
   std::map<CommandT, VkCommandPool> commandToPool_;
 };
 
-}  // namespace vinkan
+} // namespace vinkan
 #endif

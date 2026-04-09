@@ -1,6 +1,7 @@
 #ifndef VINKAN_DEVICE_HPP
 #define VINKAN_DEVICE_HPP
 
+#include <cassert>
 #include <vulkan/vulkan.h>
 
 #include <map>
@@ -21,13 +22,12 @@ namespace vinkan {
 ///////////////
 
 struct AllocatedQueueFamilyInfo {
-  uint32_t queueFamilyIndex;  // Here it's the vulkan identifier
-  uint32_t queueCount;        // Here it's the number of queues
+  uint32_t queueFamilyIndex; // Here it's the vulkan identifier
+  uint32_t queueCount;       // Here it's the number of queues
 };
 
-template <EnumType T>
-class Device : public PtrHandleWrapper<VkDevice> {
- public:
+template <EnumType T> class Device : public PtrHandleWrapper<VkDevice> {
+public:
   class Builder;
 
   VkQueue getQueue(T queueIdentifier, uint32_t queueNumber) {
@@ -49,7 +49,7 @@ class Device : public PtrHandleWrapper<VkDevice> {
     }
   }
 
- private:
+private:
   std::map<T, AllocatedQueueFamilyInfo> familyIdentifierToAllocInfo_{};
 
   Device(VkDevice device,
@@ -65,8 +65,7 @@ class Device : public PtrHandleWrapper<VkDevice> {
 //  BUILDER  //
 ///////////////
 
-template <EnumType T>
-struct QueueFamilyRequest {
+template <EnumType T> struct QueueFamilyRequest {
   T queueFamilyIdentifier;
 
   uint32_t flagsRequested;
@@ -75,9 +74,8 @@ struct QueueFamilyRequest {
   std::vector<float> queuePriorities;
 };
 
-template <EnumType T>
-class Device<T>::Builder {
- public:
+template <EnumType T> class Device<T>::Builder {
+public:
   Builder(VkPhysicalDevice physicalDevice,
           std::vector<QueueFamilyInfo> queuesInfo)
       : physicalDevice_(physicalDevice), queuesInfo_(queuesInfo) {}
@@ -120,6 +118,7 @@ class Device<T>::Builder {
     VkPhysicalDeviceVulkan12Features features12{};
     features12.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_2_FEATURES;
     features12.runtimeDescriptorArray = VK_TRUE;
+    features12.timelineSemaphore = VK_TRUE;
     features12.pNext = nullptr;
 
     VkPhysicalDeviceFeatures deviceFeatures{};
@@ -153,7 +152,7 @@ class Device<T>::Builder {
     return std::move(device);
   }
 
- private:
+private:
   std::vector<QueueFamilyInfo> queuesInfo_;
 
   std::map<T, AllocatedQueueFamilyInfo> familyIdentifierToAllocInfo_{};
@@ -194,7 +193,6 @@ class Device<T>::Builder {
   }
 };
 
-}  // namespace vinkan
+} // namespace vinkan
 
 #endif
-

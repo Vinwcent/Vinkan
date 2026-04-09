@@ -6,7 +6,10 @@ set(CMAKE_CXX_STANDARD 20)
 set(CXX_STANDARD_REQUIRED ON)
 
 find_package(Vulkan REQUIRED)
-find_package(spdlog REQUIRED)
+
+if(DEVELOPMENT_BUILD)
+    find_package(spdlog REQUIRED)
+endif()
 
 # magic_enum
 include(FetchContent)
@@ -30,9 +33,11 @@ add_library(Vinkan::Vinkan ALIAS ${VINKAN_LIBRARY_NAME})
 
 target_link_libraries(${VINKAN_LIBRARY_NAME} PUBLIC 
     ${Vulkan_LIBRARIES} 
-    spdlog::spdlog
 		magic_enum::magic_enum
 )
+if(DEVELOPMENT_BUILD)
+    target_link_libraries(${VINKAN_LIBRARY_NAME} PUBLIC spdlog::spdlog)
+endif()
 if(VINKAN_WITH_GLFW)
     target_link_libraries(${VINKAN_LIBRARY_NAME} PUBLIC glfw)
     target_compile_definitions(${VINKAN_LIBRARY_NAME} PUBLIC VINKAN_HAS_GLFW)
@@ -61,9 +66,11 @@ set(SPDLOG_LEVEL_MAP_WARN "SPDLOG_LEVEL_WARN")
 set(SPDLOG_LEVEL_MAP_ERROR "SPDLOG_LEVEL_ERROR")
 set(SPDLOG_LEVEL_MAP_CRITICAL "SPDLOG_LEVEL_CRITICAL")
 
-target_compile_definitions(${VINKAN_LIBRARY_NAME} PUBLIC 
+if(DEVELOPMENT_BUILD)
+    target_compile_definitions(${VINKAN_LIBRARY_NAME} PUBLIC 
 	SPDLOG_ACTIVE_LEVEL=${SPDLOG_LEVEL_MAP_${VINKAN_LOG_LEVEL}}
-)
+    )
+endif()
 
 # Tests
 option(VINKAN_BUILD_EXAMPLES "Build examples" OFF)

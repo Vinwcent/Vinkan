@@ -1,6 +1,7 @@
 #ifndef VINKAN_PIPELINES_HPP
 #define VINKAN_PIPELINES_HPP
 
+#include <cassert>
 #include <map>
 #include <vector>
 
@@ -13,20 +14,19 @@
 
 namespace vinkan {
 
-template <EnumType PipelineT, EnumType PipelineLayoutT>
-class Pipelines {
- public:
+template <EnumType PipelineT, EnumType PipelineLayoutT> class Pipelines {
+public:
   Pipelines(VkDevice device) : device_(device) {}
   ~Pipelines() {
-    for (auto& [identifier, pipeline] : pipelines_) {
+    for (auto &[identifier, pipeline] : pipelines_) {
       vkDestroyPipeline(device_, pipeline, nullptr);
     }
-    for (auto& [identifier, layout] : pipelineLayouts_) {
+    for (auto &[identifier, layout] : pipelineLayouts_) {
       vkDestroyPipelineLayout(device_, layout, nullptr);
     }
   }
-  Pipelines(const Pipelines&) = delete;
-  Pipelines& operator=(const Pipelines&) = delete;
+  Pipelines(const Pipelines &) = delete;
+  Pipelines &operator=(const Pipelines &) = delete;
 
   template <typename PushConstantT>
   void createLayout(PipelineLayoutT layoutIdentifier,
@@ -170,7 +170,7 @@ class Pipelines {
     return pipelineLayouts_[pipelineLayout];
   }
 
- private:
+private:
   VkDevice device_;
 
   std::map<PipelineT, VkPipelineBindPoint> pipelineToBindPoints_;
@@ -178,5 +178,5 @@ class Pipelines {
   std::map<PipelineLayoutT, VkPipelineLayout> pipelineLayouts_;
 };
 
-}  // namespace vinkan
+} // namespace vinkan
 #endif
