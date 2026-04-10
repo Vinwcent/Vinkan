@@ -21,9 +21,6 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(magic_enum)
 
 option(VINKAN_WITH_GLFW "Build with GLFW support" OFF)
-if(VINKAN_WITH_GLFW)
-    find_package(glfw3 REQUIRED)
-endif()
 
 include(sources.cmake)
 
