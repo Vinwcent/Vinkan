@@ -3,6 +3,7 @@
 
 #include <cassert>
 #include <map>
+#include <stdexcept>
 #include <vector>
 
 #include "magic_enum/magic_enum.hpp"

@@ -2,6 +2,7 @@
 #define VINKAN_COMMAND_COORDINATOR_HPP
 
 #include <cassert>
+#include <stdexcept>
 #include <vulkan/vulkan.h>
 
 #include <map>

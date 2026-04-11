@@ -2,6 +2,7 @@
 #define VINKAN_DEVICE_HPP
 
 #include <cassert>
+#include <stdexcept>
 #include <vulkan/vulkan.h>
 
 #include <map>

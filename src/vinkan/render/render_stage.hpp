@@ -4,6 +4,7 @@
 #include "vinkan/generics/concepts.hpp"
 #include "vinkan/wrappers/render_pass.hpp"
 #include <cassert>
+#include <stdexcept>
 
 namespace vinkan {
 

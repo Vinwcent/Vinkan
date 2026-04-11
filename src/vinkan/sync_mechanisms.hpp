@@ -2,6 +2,7 @@
 #define VINKAN_SYNC_MECHANISMS_HPP
 
 #include <cassert>
+#include <stdexcept>
 #include <vulkan/vulkan.h>
 
 #include <map>

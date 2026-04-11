@@ -2,6 +2,7 @@
 #define VINKAN_FILE_IO_HPP
 
 #include <fstream>
+#include <stdexcept>
 #include <vector>
 
 namespace vinkan {
@@ -25,6 +26,6 @@ inline std::vector<char> readTextFile(const std::string &filepath) {
   return buffer;
 }
 
-}  // namespace vinkan
+} // namespace vinkan
 
 #endif

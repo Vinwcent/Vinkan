@@ -6,6 +6,7 @@
 #include <map>
 #include <memory>
 #include <optional>
+#include <stdexcept>
 #include <vector>
 
 #include "vinkan/generics/concepts.hpp"

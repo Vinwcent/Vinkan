@@ -4,34 +4,33 @@
 #include <vulkan/vulkan.h>
 
 #include <memory>
+#include <stdexcept>
 #include <vector>
 
 #include "vinkan/wrappers/buffer.hpp"
 
 namespace vinkan {
 
-template <typename Vertex>
-struct ModelData {
+template <typename Vertex> struct ModelData {
   std::vector<Vertex> vertices{};
   std::vector<uint32_t> indices{};
 };
 
-template <typename Vertex>
-class ModelBase {
- public:
+template <typename Vertex> class ModelBase {
+public:
   ModelBase(VkDevice device,
             VkPhysicalDeviceMemoryProperties deviceMemoryProperties)
       : device_(device), deviceMemoryProperties_(deviceMemoryProperties) {}
 
   virtual ~ModelBase() = default;
 
-  ModelBase(const ModelBase&) = delete;
-  ModelBase& operator=(const ModelBase&) = delete;
+  ModelBase(const ModelBase &) = delete;
+  ModelBase &operator=(const ModelBase &) = delete;
 
   virtual void draw(VkCommandBuffer commandBuffer) = 0;
 
   void transferModelToDevice(VkCommandBuffer commandBuffer,
-                             const ModelData<Vertex>& modelData,
+                             const ModelData<Vertex> &modelData,
                              VkQueue transferQueue) {
     if (!modelData.vertices.empty()) {
       vertexBuffer_ =
@@ -43,16 +42,17 @@ class ModelBase {
     }
   }
 
- protected:
+protected:
   VkDevice device_;
   VkPhysicalDeviceMemoryProperties deviceMemoryProperties_;
 
   std::unique_ptr<Buffer> indexBuffer_;
   std::unique_ptr<Buffer> vertexBuffer_;
 
-  std::unique_ptr<Buffer> createVertexBuffer_(
-      VkCommandBuffer commandBuffer, const std::vector<Vertex>& vertices,
-      VkQueue transferQueue) {
+  std::unique_ptr<Buffer>
+  createVertexBuffer_(VkCommandBuffer commandBuffer,
+                      const std::vector<Vertex> &vertices,
+                      VkQueue transferQueue) {
     auto vertexCount = static_cast<uint32_t>(vertices.size());
     if (vertexCount == 0) {
       return nullptr;
@@ -71,7 +71,7 @@ class ModelBase {
 
     Buffer stagingBuffer(device_, deviceMemoryProperties_, stagingBufferInfo);
     stagingBuffer.map();
-    stagingBuffer.writeToBuffer((void*)vertices.data());
+    stagingBuffer.writeToBuffer((void *)vertices.data());
     stagingBuffer.unmap();
 
     // Create vertex buffer
@@ -94,9 +94,10 @@ class ModelBase {
     return vertexBuffer;
   }
 
-  std::unique_ptr<Buffer> createIndexBuffer_(
-      VkCommandBuffer commandBuffer, const std::vector<uint32_t>& indices,
-      VkQueue transferQueue) {
+  std::unique_ptr<Buffer>
+  createIndexBuffer_(VkCommandBuffer commandBuffer,
+                     const std::vector<uint32_t> &indices,
+                     VkQueue transferQueue) {
     auto indexCount = static_cast<uint32_t>(indices.size());
     if (indexCount == 0) {
       return nullptr;
@@ -115,7 +116,7 @@ class ModelBase {
 
     Buffer stagingBuffer(device_, deviceMemoryProperties_, stagingBufferInfo);
     stagingBuffer.map();
-    stagingBuffer.writeToBuffer((void*)indices.data());
+    stagingBuffer.writeToBuffer((void *)indices.data());
     stagingBuffer.unmap();
 
     // Create index buffer
@@ -147,7 +148,7 @@ class ModelBase {
     vkCmdBindIndexBuffer(commandBuffer, indexBuffer, 0, VK_INDEX_TYPE_UINT32);
   }
 
- private:
+private:
   void copyBufferSync_(VkCommandBuffer commandBuffer, VkBuffer srcBuffer,
                        VkBuffer dstBuffer, VkDeviceSize size,
                        VkQueue transferQueue) {
@@ -194,6 +195,6 @@ class ModelBase {
   }
 };
 
-}  // namespace vinkan
+} // namespace vinkan
 
-#endif  // VINKAN_MODEL_BASE_HPP
+#endif // VINKAN_MODEL_BASE_HPP
