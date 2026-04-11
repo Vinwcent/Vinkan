@@ -12,6 +12,7 @@
  *  UTILS FUNCTION FOR DEBUG MESSENGER  *
  ****************************************/
 
+#ifdef DEVELOPMENT_BUILD
 static VKAPI_ATTR VkBool32 VKAPI_CALL
 debugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity,
               VkDebugUtilsMessageTypeFlagsEXT messageType,
@@ -44,6 +45,7 @@ void destroyDebugUtilsMessengerEXT(VkInstance instance,
     func(instance, debugMessenger, pAllocator);
   }
 }
+#endif
 
 /**************
  *  INSTANCE  *
@@ -51,6 +53,9 @@ void destroyDebugUtilsMessengerEXT(VkInstance instance,
 
 namespace vinkan {
 Instance::Instance(InstanceInfo &instanceInfo) {
+#ifdef DEVELOPMENT_BUILD
+  debugMessenger_ = nullptr;
+#endif
   // Create app info
   VkApplicationInfo appInfo{};
   populateAppInfo_(instanceInfo, appInfo);
@@ -79,7 +84,9 @@ Instance::Instance(InstanceInfo &instanceInfo) {
   if (instanceInfo.validationLayers.size() > 0) {
     // If we have validation layers, once the instance is created, we had the
     // debug messenger
+#ifdef DEVELOPMENT_BUILD
     setupDebugMessenger_();
+#endif
   }
 }
 
@@ -88,9 +95,11 @@ Instance::~Instance() {
     return;
   }
 
+#ifdef DEVELOPMENT_BUILD
   if (debugMessenger_ != nullptr) {
     destroyDebugUtilsMessengerEXT(handle_, debugMessenger_, nullptr);
   }
+#endif
   vkDestroyInstance(handle_, nullptr);
 }
 
@@ -136,9 +145,11 @@ void Instance::populateAppInfo_(InstanceInfo &instanceInfo,
 void Instance::populateExtensions_(InstanceInfo &instanceInfo,
                                    std::vector<const char *> &extensions) {
   extensions = instanceInfo.extraVkExtensions;
+#ifdef DEVELOPMENT_BUILD
   if (instanceInfo.validationLayers.size() > 0) {
     extensions.push_back(VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
   }
+#endif
   if (instanceInfo.includePortabilityExtensions) {
     extensions.push_back(
         VK_KHR_GET_PHYSICAL_DEVICE_PROPERTIES_2_EXTENSION_NAME);
@@ -204,6 +215,7 @@ bool Instance::areValidationLayersAvailable_(
   return true;
 }
 
+#ifdef DEVELOPMENT_BUILD
 void Instance::populateDebugMessengerCreateInfo_(
     VkDebugUtilsMessengerCreateInfoEXT &createInfo) {
   createInfo = {};
@@ -214,7 +226,7 @@ void Instance::populateDebugMessengerCreateInfo_(
                            VK_DEBUG_UTILS_MESSAGE_TYPE_VALIDATION_BIT_EXT |
                            VK_DEBUG_UTILS_MESSAGE_TYPE_PERFORMANCE_BIT_EXT;
   createInfo.pfnUserCallback = debugCallback;
-  createInfo.pUserData = nullptr;  // Optional
+  createInfo.pUserData = nullptr; // Optional
 }
 
 void Instance::setupDebugMessenger_() {
@@ -225,6 +237,6 @@ void Instance::setupDebugMessenger_() {
     throw std::runtime_error("failed to set up debug messenger!");
   }
 }
+#endif
 
-}  // namespace vinkan
-
+} // namespace vinkan

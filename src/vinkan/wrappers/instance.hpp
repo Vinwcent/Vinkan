@@ -24,20 +24,22 @@ struct InstanceInfo {
   uint32_t apiVersion;
 
   std::vector<const char *> validationLayers;
-  bool includePortabilityExtensions;  // Needed to identify M-Series Mac GPU
+  bool includePortabilityExtensions; // Needed to identify M-Series Mac GPU
   std::vector<const char *> extraVkExtensions;
 };
 
 class Instance : public PtrHandleWrapper<VkInstance> {
- public:
+public:
   Instance(InstanceInfo &instanceInfo);
   ~Instance();
 
   Instance(const Instance &) = delete;
   Instance &operator=(const Instance &) = delete;
 
- private:
+private:
+#ifdef DEVELOPMENT_BUILD
   VkDebugUtilsMessengerEXT debugMessenger_;
+#endif
 
   // Populate
   void prepareCreateInfo_(InstanceInfo &instanceInfo,
@@ -47,19 +49,22 @@ class Instance : public PtrHandleWrapper<VkInstance> {
                            std::vector<const char *> &extensions);
   void populateValidationLayers_(InstanceInfo &instanceInfo,
                                  VkInstanceCreateInfo &createInfo);
+#ifdef DEVELOPMENT_BUILD
   void populateDebugMessengerCreateInfo_(
       VkDebugUtilsMessengerCreateInfoEXT &createInfo);
+#endif
 
   // Check
-  bool areExtensionsAvailables_(
-      const std::vector<const char *> &extensionsNames);
+  bool
+  areExtensionsAvailables_(const std::vector<const char *> &extensionsNames);
   bool areValidationLayersAvailable_(const std::vector<const char *> &layers);
 
   // Debug messenger
+#ifdef DEVELOPMENT_BUILD
   void setupDebugMessenger_();
+#endif
 };
 
-}  // namespace vinkan
+} // namespace vinkan
 
 #endif /* ifndef VVW_INSTANCE_HPP */
-
