@@ -47,7 +47,7 @@ Swapchain::Swapchain(SwapchainInfo swapchainInfo)
   createInfo.presentMode = swapchainInfo.presentMode;
   createInfo.clipped = VK_TRUE;
 
-  createInfo.oldSwapchain = VK_NULL_HANDLE;
+  createInfo.oldSwapchain = swapchainInfo.oldSwapchain;
 
   if (vkCreateSwapchainKHR(swapchainInfo.device, &createInfo, nullptr,
                            &handle_) != VK_SUCCESS) {

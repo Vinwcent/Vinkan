@@ -116,7 +116,24 @@ public:
         get_vinkan_logger(),
         "ImageResource " +
             std::string(magic_enum::enum_name(imageResourceIdentifier)) +
-            " created (storage image).");
+                       " created (storage image).");
+  }
+
+  void replace(ImageT imageIdentifier, std::unique_ptr<Image> image) {
+    assert(images_.contains(imageIdentifier));
+    images_[imageIdentifier] = std::move(image);
+  }
+
+  void replace(ImageViewT imageViewIdentifier,
+               std::unique_ptr<ImageView> imageView) {
+    assert(imageViews_.contains(imageViewIdentifier));
+    imageViews_[imageViewIdentifier] = std::move(imageView);
+  }
+
+  void replace(ImageResourceT imageResourceIdentifier,
+               std::unique_ptr<ImageResource> imageResource) {
+    assert(imageResources_.contains(imageResourceIdentifier));
+    imageResources_[imageResourceIdentifier] = std::move(imageResource);
   }
 
   Buffer &get(BufferT bufferIdentifier) {
@@ -182,6 +199,26 @@ public:
     }
 
     resourcesBinder_.createSet(setIdentifier, setLayoutIdentifier,
+                               resourceDescriptorInfos);
+  }
+
+  void updateSet(
+      SetT setIdentifier, SetLayoutT setLayoutIdentifier,
+      const std::vector<
+          std::variant<VinkanBufferBinding<BufferT>,
+                       VinkanImageResourceBinding<ImageResourceT>>> &bindings) {
+    std::vector<AnyDescriptorInfo> resourceDescriptorInfos{};
+
+    for (const auto &binding : bindings) {
+      std::visit(
+          [&](const auto &specificBinding) {
+            auto descriptorInfo = getResourceDescriptorInfo(specificBinding);
+            resourceDescriptorInfos.push_back(descriptorInfo);
+          },
+          binding);
+    }
+
+    resourcesBinder_.updateSet(setIdentifier, setLayoutIdentifier,
                                resourceDescriptorInfos);
   }
 

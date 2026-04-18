@@ -101,6 +101,22 @@ class ResourcesBinder {
                            " created.");
   }
 
+  void updateSet(SetT setIdentifier, SetLayoutT setLayoutIdentifier,
+                 const std::vector<AnyDescriptorInfo> &resourceInfos) {
+    assert(sets_.contains(setIdentifier));
+    assert(setLayouts_.contains(setLayoutIdentifier));
+    auto &setLayout = *setLayouts_[setLayoutIdentifier];
+    auto &pool = *pools_[layoutIdentifierToPool_[setLayoutIdentifier]];
+    DescriptorSet::Builder builder(device_, setLayout, pool);
+
+    for (auto &resourceInfo : resourceInfos) {
+      std::visit([&builder](auto &&info) { builder.setResource(info); },
+                 resourceInfo);
+    }
+
+    builder.build(*sets_[setIdentifier]);
+  }
+
   VkDescriptorSet get(SetT setIdentifier) {
     assert(sets_.contains(setIdentifier));
     return sets_[setIdentifier]->getHandle();

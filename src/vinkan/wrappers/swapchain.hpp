@@ -14,6 +14,7 @@ namespace vinkan {
 struct SwapchainInfo {
   VkDevice device;
   VkSurfaceKHR surface;
+  VkSwapchainKHR oldSwapchain = VK_NULL_HANDLE;
   VkExtent2D imageExtent;
   VkSurfaceFormatKHR surfaceFormat;
   VkPresentModeKHR presentMode;
