@@ -122,9 +122,16 @@ public:
     features12.timelineSemaphore = VK_TRUE;
     features12.pNext = nullptr;
 
+    VkPhysicalDeviceVulkan11Features features11{};
+    features11.sType = VK_STRUCTURE_TYPE_PHYSICAL_DEVICE_VULKAN_1_1_FEATURES;
+    features11.shaderDrawParameters = VK_TRUE;
+    features11.pNext = &features12;
+
     VkPhysicalDeviceFeatures deviceFeatures{};
     deviceFeatures.samplerAnisotropy = VK_TRUE;
     deviceFeatures.fragmentStoresAndAtomics = VK_TRUE;
+    deviceFeatures.shaderStorageImageReadWithoutFormat = VK_TRUE;
+    deviceFeatures.shaderStorageImageWriteWithoutFormat = VK_TRUE;
     VkDeviceCreateInfo createInfo{};
     createInfo.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO;
 
@@ -133,7 +140,7 @@ public:
     createInfo.pQueueCreateInfos = queueCreateInfo_.data();
 
     createInfo.pEnabledFeatures = &deviceFeatures;
-    createInfo.pNext = &features12;
+    createInfo.pNext = &features11;
     std::vector<const char *> deviceExtensionsVector(deviceExtensions_.begin(),
                                                      deviceExtensions_.end());
     createInfo.enabledExtensionCount =
